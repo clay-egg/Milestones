@@ -11,6 +11,7 @@ class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   TextColumn get role => text()(); // copper (learning), gold (achievement), plum (goal), sage (neutral/success), rose (destructive)
+  IntColumn get weeklyTarget => integer().nullable().withDefault(const Constant(0))(); // 0 = no target, >0 = entries per week
 }
 
 class Entries extends Table {
@@ -224,9 +225,14 @@ class AppDatabase extends _$AppDatabase {
           }
         },
         beforeOpen: (details) async {
-          // Safety check: ensure notes column exists in SQLite table if upgrading from legacy schema
+          // Safety check: ensure notes and weekly_target columns exist in SQLite table
           try {
             await customStatement('ALTER TABLE entries ADD COLUMN notes TEXT;');
+          } catch (_) {
+            // Already exists
+          }
+          try {
+            await customStatement('ALTER TABLE categories ADD COLUMN weekly_target INTEGER DEFAULT 0;');
           } catch (_) {
             // Already exists
           }
@@ -311,8 +317,12 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // Categories CRUD
-  Future<void> addCategory(String name, String role) async {
-    await into(categories).insert(CategoriesCompanion.insert(name: name, role: role));
+  Future<void> addCategory(String name, String role, {int weeklyTarget = 0}) async {
+    await into(categories).insert(CategoriesCompanion.insert(
+      name: name,
+      role: role,
+      weeklyTarget: Value(weeklyTarget),
+    ));
   }
 
   Future<void> renameCategory(int id, String newName) async {
@@ -321,11 +331,12 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<void> updateCategory(int id, {required String name, required String role}) async {
+  Future<void> updateCategory(int id, {required String name, required String role, int? weeklyTarget}) async {
     await (update(categories)..where((c) => c.id.equals(id))).write(
       CategoriesCompanion(
         name: Value(name),
         role: Value(role),
+        weeklyTarget: weeklyTarget != null ? Value(weeklyTarget) : const Value.absent(),
       ),
     );
   }

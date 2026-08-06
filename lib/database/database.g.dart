@@ -11,7 +11,8 @@ class Categorie extends DataClass implements Insertable<Categorie> {
   final int id;
   final String name;
   final String role;
-  Categorie({required this.id, required this.name, required this.role});
+  final int weeklyTarget;
+  Categorie({required this.id, required this.name, required this.role, this.weeklyTarget = 0});
   factory Categorie.fromData(Map<String, dynamic> data, {String? prefix}) {
     final effectivePrefix = prefix ?? '';
     return Categorie(
@@ -21,6 +22,9 @@ class Categorie extends DataClass implements Insertable<Categorie> {
           .mapFromDatabaseResponse(data['${effectivePrefix}name'])!,
       role: const StringType()
           .mapFromDatabaseResponse(data['${effectivePrefix}role'])!,
+      weeklyTarget: const IntType()
+              .mapFromDatabaseResponse(data['${effectivePrefix}weekly_target']) ??
+          0,
     );
   }
   @override
@@ -29,6 +33,7 @@ class Categorie extends DataClass implements Insertable<Categorie> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['role'] = Variable<String>(role);
+    map['weekly_target'] = Variable<int>(weeklyTarget);
     return map;
   }
 
@@ -37,6 +42,7 @@ class Categorie extends DataClass implements Insertable<Categorie> {
       id: Value(id),
       name: Value(name),
       role: Value(role),
+      weeklyTarget: Value(weeklyTarget),
     );
   }
 
@@ -47,6 +53,7 @@ class Categorie extends DataClass implements Insertable<Categorie> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       role: serializer.fromJson<String>(json['role']),
+      weeklyTarget: json['weeklyTarget'] != null ? serializer.fromJson<int>(json['weeklyTarget']) : 0,
     );
   }
   @override
@@ -56,68 +63,78 @@ class Categorie extends DataClass implements Insertable<Categorie> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'role': serializer.toJson<String>(role),
+      'weeklyTarget': serializer.toJson<int>(weeklyTarget),
     };
   }
 
-  Categorie copyWith({int? id, String? name, String? role}) => Categorie(
+  Categorie copyWith({int? id, String? name, String? role, int? weeklyTarget}) => Categorie(
         id: id ?? this.id,
         name: name ?? this.name,
         role: role ?? this.role,
+        weeklyTarget: weeklyTarget ?? this.weeklyTarget,
       );
   @override
   String toString() {
     return (StringBuffer('Categorie(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('role: $role')
+          ..write('role: $role, ')
+          ..write('weeklyTarget: $weeklyTarget')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, role);
+  int get hashCode => Object.hash(id, name, role, weeklyTarget);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Categorie &&
           other.id == this.id &&
           other.name == this.name &&
-          other.role == this.role);
+          other.role == this.role &&
+          other.weeklyTarget == this.weeklyTarget);
 }
 
 class CategoriesCompanion extends UpdateCompanion<Categorie> {
   final Value<int> id;
   final Value<String> name;
   final Value<String> role;
+  final Value<int> weeklyTarget;
   const CategoriesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.role = const Value.absent(),
+    this.weeklyTarget = const Value.absent(),
   });
   CategoriesCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     required String role,
+    this.weeklyTarget = const Value.absent(),
   })  : name = Value(name),
         role = Value(role);
   static Insertable<Categorie> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? role,
+    Expression<int>? weeklyTarget,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (role != null) 'role': role,
+      if (weeklyTarget != null) 'weekly_target': weeklyTarget,
     });
   }
 
   CategoriesCompanion copyWith(
-      {Value<int>? id, Value<String>? name, Value<String>? role}) {
+      {Value<int>? id, Value<String>? name, Value<String>? role, Value<int>? weeklyTarget}) {
     return CategoriesCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       role: role ?? this.role,
+      weeklyTarget: weeklyTarget ?? this.weeklyTarget,
     );
   }
 
@@ -133,6 +150,9 @@ class CategoriesCompanion extends UpdateCompanion<Categorie> {
     if (role.present) {
       map['role'] = Variable<String>(role.value);
     }
+    if (weeklyTarget.present) {
+      map['weekly_target'] = Variable<int>(weeklyTarget.value);
+    }
     return map;
   }
 
@@ -141,7 +161,8 @@ class CategoriesCompanion extends UpdateCompanion<Categorie> {
     return (StringBuffer('CategoriesCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('role: $role')
+          ..write('role: $role, ')
+          ..write('weeklyTarget: $weeklyTarget')
           ..write(')'))
         .toString();
   }
@@ -170,8 +191,15 @@ class $CategoriesTable extends Categories
   late final GeneratedColumn<String?> role = GeneratedColumn<String?>(
       'role', aliasedName, false,
       type: const StringType(), requiredDuringInsert: true);
+  final VerificationMeta _weeklyTargetMeta = const VerificationMeta('weeklyTarget');
   @override
-  List<GeneratedColumn> get $columns => [id, name, role];
+  late final GeneratedColumn<int?> weeklyTarget = GeneratedColumn<int?>(
+      'weekly_target', aliasedName, true,
+      type: const IntType(),
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  @override
+  List<GeneratedColumn> get $columns => [id, name, role, weeklyTarget];
   @override
   String get aliasedName => _alias ?? 'categories';
   @override
