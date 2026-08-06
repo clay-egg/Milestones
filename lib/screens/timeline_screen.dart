@@ -9,270 +9,458 @@ import 'package:intl/intl.dart';
 class TimelineScreen extends ConsumerWidget {
   const TimelineScreen({Key? key}) : super(key: key);
 
-  int _calculateStreak(List<EntryWithCategory> entries) {
-    if (entries.isEmpty) return 0;
-    final dates = entries
-        .map((e) => DateTime(e.entry.date.year, e.entry.date.month, e.entry.date.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-
-    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    final yesterday = today.subtract(const Duration(days: 1));
-
-    if (!dates.contains(today) && !dates.contains(yesterday)) {
-      return 0;
-    }
-
-    int streak = 0;
-    DateTime checkDate = dates.contains(today) ? today : yesterday;
-
-    while (dates.contains(checkDate)) {
-      streak++;
-      checkDate = checkDate.subtract(const Duration(days: 1));
-    }
-    return streak;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(timelineEntriesProvider);
-    final projectsAsync = ref.watch(projectsProvider);
-    final goalsAsync = ref.watch(goalsProvider);
     final theme = ThemeProvider.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: entriesAsync.when(
         data: (entries) {
-          final projectsCount = projectsAsync.value?.length ?? 0;
-          final goalsCount = goalsAsync.value?.length ?? 0;
-          
-          // Calculate stats
-          final streak = _calculateStreak(entries);
-          final learningHours = entries.where((e) => e.category.role == 'learning').length;
-          final achievementsCount = entries.where((e) => e.category.role == 'achievement').length;
-
-          return Padding(
-            padding: const EdgeInsets.all(24.0),
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Stat Row
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildStatCard(context, 'Streak', '$streak days', 'neutral'),
-                      const SizedBox(width: 12),
-                      _buildStatCard(context, 'Projects', '$projectsCount active', 'sage'),
-                      const SizedBox(width: 12),
-                      _buildStatCard(context, 'Learning', '$learningHours hours', 'copper'),
-                      const SizedBox(width: 12),
-                      _buildStatCard(context, 'Goals', '$goalsCount tracked', 'plum'),
-                      const SizedBox(width: 12),
-                      _buildStatCard(context, 'Wins', '$achievementsCount logged', 'gold'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                
-                // Entries Feed Header
+                // 1. Minimalist Weekly Activity Comparison Bar Chart
+                _buildWeeklyChartCard(context, entries, theme),
+                const SizedBox(height: 18),
+
+                // 2. Timeline Section Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Activity Feed',
-                      style: AppFonts.heading(context, size: 18),
-                    ),
-                    // Only show inline capture trigger for desktop wide layout when FAB is not available
-                    if (MediaQuery.of(context).size.width > 880)
-                      TextButton.icon(
-                        onPressed: () => QuickCapture.show(context),
-                        icon: Icon(Icons.add_rounded, color: AppColors.getRoleColor('copper', theme.isDark)),
-                        label: Text(
-                          'Quick Capture',
-                          style: AppFonts.ui(context, color: AppColors.getRoleColor('copper', theme.isDark), weight: FontWeight.w600),
-                        ),
+                    Text('Timeline', style: AppFonts.heading(context, size: 18)),
+                    if (entries.isNotEmpty)
+                      Text(
+                        '${entries.length} ${entries.length == 1 ? 'entry' : 'entries'} total',
+                        style: AppFonts.mono(context, size: 11, color: theme.textMuted),
                       ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
-                // Entries Feed
-                Expanded(
-                  child: entries.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.auto_stories_outlined, size: 48, color: theme.textMuted),
-                              const SizedBox(height: 12),
-                              Text(
-                                'No entries recorded yet.',
-                                style: AppFonts.ui(context, color: theme.textMuted),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Use Quick Capture to record your first win!',
-                                style: AppFonts.ui(context, color: theme.textMuted, size: 12),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: entries.length,
-                          itemBuilder: (context, index) {
-                            final entryWithCat = entries[index];
-                            final entry = entryWithCat.entry;
-                            final category = entryWithCat.category;
-                            
-                            // Grouping dates visually
-                            final dateStr = DateFormat('MMMM d, yyyy').format(entry.date);
-                            final showHeader = index == 0 ||
-                                DateFormat('yyyy-MM-dd').format(entries[index - 1].entry.date) !=
-                                    DateFormat('yyyy-MM-dd').format(entry.date);
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (showHeader) ...[
-                                  if (index > 0) const SizedBox(height: 16),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
-                                    child: Text(
-                                      dateStr,
-                                      style: AppFonts.heading(context, size: 14, color: theme.textMuted),
-                                    ),
-                                  ),
-                                ],
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: MilestoneCard(
-                                    role: category.role,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                entry.description,
-                                                style: AppFonts.ui(context, size: 15, color: theme.text),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              DateFormat('h:mm a').format(entry.date),
-                                              style: AppFonts.mono(context, size: 11, color: theme.textMuted),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            RoleBadge(text: category.name, role: category.role, isSmall: true),
-                                            if (entry.project != null) ...[
-                                              const SizedBox(width: 8),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBorder.withOpacity(0.3),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                  border: Border.all(color: theme.border, width: 0.5),
-                                                ),
-                                                child: Text(
-                                                  '→ ${entry.project}',
-                                                  style: AppFonts.mono(
-                                                    context,
-                                                    size: 10,
-                                                    color: theme.text,
-                                                    weight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                            if (entry.tags.isNotEmpty) ...[
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: SingleChildScrollView(
-                                                  scrollDirection: Axis.horizontal,
-                                                  child: Row(
-                                                    children: entry.tags.split(',').map((t) {
-                                                      return Padding(
-                                                        padding: const EdgeInsets.only(right: 6),
-                                                        child: Text(
-                                                          '#$t',
-                                                          style: AppFonts.mono(
-                                                            context,
-                                                            size: 11,
-                                                            color: theme.textMuted,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }).toList(),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                ),
+                // 3. Daily Cards or Empty State
+                if (entries.isEmpty)
+                  _buildEmptyState(context, theme)
+                else
+                  _buildDailyCards(context, ref, entries, theme),
               ],
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error loading feed: $err')),
+        loading: () => const Center(child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(),
+        )),
+        error: (err, stack) => Center(child: Text('Error loading timeline: $err')),
       ),
       floatingActionButton: MediaQuery.of(context).size.width <= 880
           ? FloatingActionButton(
               onPressed: () => QuickCapture.show(context),
               backgroundColor: AppColors.getRoleColor('copper', theme.isDark),
-              elevation: 4,
-              child: const Icon(Icons.add, color: Colors.white, size: 28),
+              elevation: 2,
+              mini: false,
+              child: const Icon(Icons.add, color: Colors.white, size: 24),
             )
           : null,
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String title, String value, String role) {
-    final theme = ThemeProvider.of(context);
-    final color = AppColors.getRoleColor(role, theme.isDark);
+  // --- MINIMALIST WEEKLY ACTIVITY BAR CHART ---
+  Widget _buildWeeklyChartCard(BuildContext context, List<EntryWithCategory> allEntries, ThemeDetails theme) {
+    final copperColor = AppColors.getRoleColor('copper', theme.isDark);
+    final now = DateTime.now();
+
+    // Determine current week's Monday (Mon=1, Sun=7)
+    final currentMonday = now.subtract(Duration(days: now.weekday - 1));
+    final weekDays = List.generate(7, (i) {
+      final day = currentMonday.add(Duration(days: i));
+      return DateTime(day.year, day.month, day.day);
+    });
+
+    // Count entries per day of current week
+    final Map<String, int> weekCounts = {};
+    int thisWeekTotal = 0;
+
+    for (final e in allEntries) {
+      final d = e.entry.date;
+      final key = DateFormat('yyyy-MM-dd').format(d);
+      weekCounts[key] = (weekCounts[key] ?? 0) + 1;
+    }
+
+    final List<Map<String, dynamic>> dayData = [];
+    int maxCount = 1;
+
+    for (final day in weekDays) {
+      final key = DateFormat('yyyy-MM-dd').format(day);
+      final count = weekCounts[key] ?? 0;
+      thisWeekTotal += count;
+      if (count > maxCount) maxCount = count;
+
+      final isToday = day.year == now.year && day.month == now.month && day.day == now.day;
+      final dayLabel = DateFormat('EEE').format(day);
+
+      dayData.add({
+        'date': day,
+        'label': dayLabel,
+        'count': count,
+        'isToday': isToday,
+      });
+    }
 
     return Container(
-      width: 130,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: theme.surface,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: theme.border),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.border, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppFonts.ui(context, size: 11, color: theme.textMuted).copyWith(
-              letterSpacing: 0.5,
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.bar_chart_rounded, size: 18, color: copperColor),
+                  const SizedBox(width: 6),
+                  Text('Weekly Activity', style: AppFonts.heading(context, size: 15)),
+                ],
+              ),
+              Text(
+                '$thisWeekTotal logged this week',
+                style: AppFonts.mono(context, size: 10, color: copperColor, weight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // 7 Minimalist Bar Columns
+          SizedBox(
+            height: 75,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: dayData.map((d) {
+                final count = d['count'] as int;
+                final isToday = d['isToday'] as bool;
+                final label = d['label'] as String;
+                final double heightRatio = maxCount > 0 ? (count / maxCount) : 0.0;
+                final double barHeight = (heightRatio * 42).clamp(4.0, 42.0);
+
+                final barColor = count > 0
+                    ? (isToday ? copperColor : copperColor.withOpacity(0.7))
+                    : theme.border.withOpacity(0.4);
+
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Count on top
+                    Text(
+                      count > 0 ? '$count' : '',
+                      style: AppFonts.mono(
+                        context,
+                        size: 9,
+                        color: isToday ? copperColor : theme.textMuted,
+                        weight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+
+                    // Bar Graphic
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      width: isToday ? 16 : 12,
+                      height: barHeight,
+                      decoration: BoxDecoration(
+                        color: barColor,
+                        borderRadius: BorderRadius.circular(4),
+                        border: isToday ? Border.all(color: copperColor, width: 1) : null,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Day Label
+                    Text(
+                      label,
+                      style: AppFonts.mono(
+                        context,
+                        size: 9,
+                        color: isToday ? copperColor : theme.textMuted,
+                        weight: isToday ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
             ),
           ),
-          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+
+  // --- DAILY GROUPED CARDS ---
+  Widget _buildDailyCards(
+    BuildContext context,
+    WidgetRef ref,
+    List<EntryWithCategory> entries,
+    ThemeDetails theme,
+  ) {
+    final Map<String, List<EntryWithCategory>> grouped = {};
+    for (final item in entries) {
+      final dateKey = DateFormat('yyyy-MM-dd').format(item.entry.date);
+      grouped.putIfAbsent(dateKey, () => []).add(item);
+    }
+
+    final dayKeys = grouped.keys.toList();
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: dayKeys.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final dateKey = dayKeys[index];
+        final dayEntries = grouped[dateKey]!;
+        final firstDate = dayEntries.first.entry.date;
+
+        return _buildSingleDailyCard(context, ref, firstDate, dayEntries, theme);
+      },
+    );
+  }
+
+  Widget _buildSingleDailyCard(
+    BuildContext context,
+    WidgetRef ref,
+    DateTime date,
+    List<EntryWithCategory> dayEntries,
+    ThemeDetails theme,
+  ) {
+    final db = ref.read(databaseProvider);
+    final copperColor = AppColors.getRoleColor('copper', theme.isDark);
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final entryDay = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(entryDay).inDays;
+
+    String dateTitle;
+    if (diff == 0) {
+      dateTitle = 'Today, ${DateFormat('MMM d').format(date)}';
+    } else if (diff == 1) {
+      dateTitle = 'Yesterday, ${DateFormat('MMM d').format(date)}';
+    } else {
+      dateTitle = DateFormat('EEEE, MMM d, yyyy').format(date);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: diff == 0 ? copperColor.withOpacity(0.35) : theme.border,
+          width: diff == 0 ? 1 : 0.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Card Header (Compact Date + Count)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: diff == 0
+                  ? copperColor.withOpacity(0.06)
+                  : (theme.isDark ? AppColors.darkSurface2.withOpacity(0.4) : AppColors.lightBg),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      diff == 0 ? Icons.today_rounded : Icons.calendar_today_rounded,
+                      size: 14,
+                      color: diff == 0 ? copperColor : theme.textMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      dateTitle,
+                      style: AppFonts.heading(context, size: 14),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${dayEntries.length} ${dayEntries.length == 1 ? 'entry' : 'entries'}',
+                  style: AppFonts.mono(
+                    context,
+                    size: 10,
+                    color: theme.textMuted,
+                    weight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, thickness: 0.5),
+
+          // Minimalist Compact List of Entries
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: dayEntries.length,
+            separatorBuilder: (_, __) => Divider(
+              height: 1,
+              thickness: 0.5,
+              indent: 14,
+              endIndent: 14,
+              color: theme.border.withOpacity(0.4),
+            ),
+            itemBuilder: (context, idx) {
+              final item = dayEntries[idx];
+              final entry = item.entry;
+              final category = item.category;
+              final catColor = AppColors.getRoleColor(category.role, theme.isDark);
+
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Small Category Pill Dot Badge
+                    Container(
+                      margin: const EdgeInsets.only(top: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: catColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: catColor.withOpacity(0.25), width: 0.8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 5,
+                            height: 5,
+                            decoration: BoxDecoration(color: catColor, shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            category.name,
+                            style: AppFonts.mono(
+                              context,
+                              size: 9,
+                              color: catColor,
+                              weight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Description & Notes
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.description,
+                            style: AppFonts.ui(context, size: 14, color: theme.text),
+                          ),
+                          if (entry.notes != null && entry.notes!.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              entry.notes!,
+                              style: AppFonts.ui(context, size: 12, color: theme.textMuted),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+
+                    // Compact Delete button
+                    InkWell(
+                      onTap: () => _confirmDeleteEntry(context, db, entry),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(Icons.close_rounded, size: 14, color: theme.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteEntry(BuildContext context, AppDatabase db, Entrie entry) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final t = ThemeProvider.of(ctx);
+        final roseColor = AppColors.getRoleColor('rose', t.isDark);
+        return AlertDialog(
+          backgroundColor: t.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text('Delete Entry?', style: AppFonts.heading(ctx, size: 15)),
+          content: Text(
+            'Are you sure you want to remove this log entry?',
+            style: AppFonts.ui(ctx, size: 13, color: t.textMuted),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: AppFonts.ui(ctx, color: t.textMuted)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await (db.delete(db.entries)..where((e) => e.id.equals(entry.id))).go();
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: Text('Delete', style: AppFonts.ui(ctx, color: roseColor, weight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, ThemeDetails theme) {
+    final copperColor = AppColors.getRoleColor('copper', theme.isDark);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.border, width: 0.5),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.timeline_rounded, size: 32, color: copperColor),
+          const SizedBox(height: 12),
           Text(
-            value,
-            style: AppFonts.heading(context, size: 24, color: color, weight: FontWeight.w500),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            'Your timeline is empty',
+            style: AppFonts.heading(context, size: 16),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Tap Capture or + to log an entry.',
+            style: AppFonts.ui(context, size: 13, color: theme.textMuted),
           ),
         ],
       ),

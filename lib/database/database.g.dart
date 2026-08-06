@@ -220,13 +220,15 @@ class Entrie extends DataClass implements Insertable<Entrie> {
   final int categoryId;
   final String? project;
   final String tags;
+  final String? notes;
   Entrie(
       {required this.id,
       required this.date,
       required this.description,
       required this.categoryId,
       this.project,
-      required this.tags});
+      required this.tags,
+      this.notes});
   factory Entrie.fromData(Map<String, dynamic> data, {String? prefix}) {
     final effectivePrefix = prefix ?? '';
     return Entrie(
@@ -242,6 +244,8 @@ class Entrie extends DataClass implements Insertable<Entrie> {
           .mapFromDatabaseResponse(data['${effectivePrefix}project']),
       tags: const StringType()
           .mapFromDatabaseResponse(data['${effectivePrefix}tags'])!,
+      notes: const StringType()
+          .mapFromDatabaseResponse(data['${effectivePrefix}notes']),
     );
   }
   @override
@@ -255,6 +259,9 @@ class Entrie extends DataClass implements Insertable<Entrie> {
       map['project'] = Variable<String?>(project);
     }
     map['tags'] = Variable<String>(tags);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String?>(notes);
+    }
     return map;
   }
 
@@ -268,6 +275,9 @@ class Entrie extends DataClass implements Insertable<Entrie> {
           ? const Value.absent()
           : Value(project),
       tags: Value(tags),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
     );
   }
 
@@ -281,6 +291,7 @@ class Entrie extends DataClass implements Insertable<Entrie> {
       categoryId: serializer.fromJson<int>(json['categoryId']),
       project: serializer.fromJson<String?>(json['project']),
       tags: serializer.fromJson<String>(json['tags']),
+      notes: serializer.fromJson<String?>(json['notes']),
     );
   }
   @override
@@ -293,6 +304,7 @@ class Entrie extends DataClass implements Insertable<Entrie> {
       'categoryId': serializer.toJson<int>(categoryId),
       'project': serializer.toJson<String?>(project),
       'tags': serializer.toJson<String>(tags),
+      'notes': serializer.toJson<String?>(notes),
     };
   }
 
@@ -302,7 +314,8 @@ class Entrie extends DataClass implements Insertable<Entrie> {
           String? description,
           int? categoryId,
           String? project,
-          String? tags}) =>
+          String? tags,
+          String? notes}) =>
       Entrie(
         id: id ?? this.id,
         date: date ?? this.date,
@@ -310,6 +323,7 @@ class Entrie extends DataClass implements Insertable<Entrie> {
         categoryId: categoryId ?? this.categoryId,
         project: project ?? this.project,
         tags: tags ?? this.tags,
+        notes: notes ?? this.notes,
       );
   @override
   String toString() {
@@ -319,14 +333,15 @@ class Entrie extends DataClass implements Insertable<Entrie> {
           ..write('description: $description, ')
           ..write('categoryId: $categoryId, ')
           ..write('project: $project, ')
-          ..write('tags: $tags')
+          ..write('tags: $tags, ')
+          ..write('notes: $notes')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, date, description, categoryId, project, tags);
+      Object.hash(id, date, description, categoryId, project, tags, notes);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -336,7 +351,8 @@ class Entrie extends DataClass implements Insertable<Entrie> {
           other.description == this.description &&
           other.categoryId == this.categoryId &&
           other.project == this.project &&
-          other.tags == this.tags);
+          other.tags == this.tags &&
+          other.notes == this.notes);
 }
 
 class EntriesCompanion extends UpdateCompanion<Entrie> {
@@ -346,6 +362,7 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
   final Value<int> categoryId;
   final Value<String?> project;
   final Value<String> tags;
+  final Value<String?> notes;
   const EntriesCompanion({
     this.id = const Value.absent(),
     this.date = const Value.absent(),
@@ -353,6 +370,7 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
     this.categoryId = const Value.absent(),
     this.project = const Value.absent(),
     this.tags = const Value.absent(),
+    this.notes = const Value.absent(),
   });
   EntriesCompanion.insert({
     this.id = const Value.absent(),
@@ -361,6 +379,7 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
     required int categoryId,
     this.project = const Value.absent(),
     required String tags,
+    this.notes = const Value.absent(),
   })  : date = Value(date),
         description = Value(description),
         categoryId = Value(categoryId),
@@ -372,6 +391,7 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
     Expression<int>? categoryId,
     Expression<String?>? project,
     Expression<String>? tags,
+    Expression<String?>? notes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -380,6 +400,7 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
       if (categoryId != null) 'category_id': categoryId,
       if (project != null) 'project': project,
       if (tags != null) 'tags': tags,
+      if (notes != null) 'notes': notes,
     });
   }
 
@@ -389,7 +410,8 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
       Value<String>? description,
       Value<int>? categoryId,
       Value<String?>? project,
-      Value<String>? tags}) {
+      Value<String>? tags,
+      Value<String?>? notes}) {
     return EntriesCompanion(
       id: id ?? this.id,
       date: date ?? this.date,
@@ -397,6 +419,7 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
       categoryId: categoryId ?? this.categoryId,
       project: project ?? this.project,
       tags: tags ?? this.tags,
+      notes: notes ?? this.notes,
     );
   }
 
@@ -420,6 +443,9 @@ class EntriesCompanion extends UpdateCompanion<Entrie> {
     }
     if (tags.present) {
       map['tags'] = Variable<String>(tags.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String?>(notes.value);
     }
     return map;
   }
@@ -478,9 +504,14 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entrie> {
   late final GeneratedColumn<String?> tags = GeneratedColumn<String?>(
       'tags', aliasedName, false,
       type: const StringType(), requiredDuringInsert: true);
+  final VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String?> notes = GeneratedColumn<String?>(
+      'notes', aliasedName, true,
+      type: const StringType(), requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, date, description, categoryId, project, tags];
+      [id, date, description, categoryId, project, tags, notes];
   @override
   String get aliasedName => _alias ?? 'entries';
   @override
@@ -524,6 +555,10 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entrie> {
           _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
     } else if (isInserting) {
       context.missing(_tagsMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+          _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
     }
     return context;
   }

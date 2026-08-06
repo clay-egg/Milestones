@@ -145,20 +145,16 @@ class AppShell extends ConsumerWidget {
     );
   }
 
-  // --- TOP BAR FOR MOBILE ---
   Widget _buildTopBar(BuildContext context, String subtitle, IconData pageIcon) {
     final theme = ThemeProvider.of(context);
     final copperColor = AppColors.getRoleColor('copper', theme.isDark);
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        height: 64,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        color: theme.surface,
-        alignment: Alignment.centerLeft,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
+    final topPad = MediaQuery.of(context).padding.top;
+    return Container(
+      color: theme.surface,
+      padding: EdgeInsets.fromLTRB(20, topPad + 14, 20, 14),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
             // App brand mark
             Row(
               children: [
@@ -219,8 +215,7 @@ class AppShell extends ConsumerWidget {
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../providers/state_providers.dart';
 import '../widgets/common_widgets.dart';
 import '../database/database.dart';
@@ -31,19 +32,15 @@ class QuickCapture extends ConsumerStatefulWidget {
 class _QuickCaptureState extends ConsumerState<QuickCapture> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  final _projectController = TextEditingController();
-  final _tagInputController = TextEditingController();
-  
+  final _notesController = TextEditingController();
+
   int? _selectedCategoryId;
-  final List<String> _tags = [];
-  List<String> _projectSuggestions = [];
-  bool _showSuggestions = false;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void dispose() {
     _descriptionController.dispose();
-    _projectController.dispose();
-    _tagInputController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -51,23 +48,10 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
   Widget build(BuildContext context) {
     final theme = ThemeProvider.of(context);
     final categoriesAsync = ref.watch(categoriesProvider);
-    final projectsAsync = ref.watch(projectsProvider);
     final db = ref.watch(databaseProvider);
-    
-    final width = MediaQuery.of(context).size.width;
-    final isDesktop = width > 880;
 
-    // Filter project suggestions based on user input
-    final allProjects = projectsAsync.value ?? [];
-    final inputText = _projectController.text.trim();
-    if (inputText.isNotEmpty) {
-      _projectSuggestions = allProjects
-          .map((p) => p.name)
-          .where((name) => name.toLowerCase().contains(inputText.toLowerCase()))
-          .toList();
-    } else {
-      _projectSuggestions = [];
-    }
+    final isDesktop = MediaQuery.of(context).size.width > 880;
+    final copperColor = AppColors.getRoleColor('copper', theme.isDark);
 
     final formWidget = Form(
       key: _formKey,
@@ -75,54 +59,163 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Quick Capture Win',
-                style: AppFonts.heading(context, size: 18),
-              ),
+              Text('Log Entry', style: AppFonts.heading(context, size: 18)),
               IconButton(
                 icon: const Icon(Icons.close, size: 20),
+                color: theme.textMuted,
                 onPressed: () => Navigator.pop(context),
               ),
             ],
           ),
+          const SizedBox(height: 20),
+
+          // Date selector row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Date',
+                style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.w600),
+              ),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: theme.isDark
+                              ? ColorScheme.dark(
+                                  primary: copperColor,
+                                  surface: theme.surface,
+                                )
+                              : ColorScheme.light(
+                                  primary: copperColor,
+                                  surface: theme.surface,
+                                ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      // Preserve time of day if picking date
+                      final now = DateTime.now();
+                      _selectedDate = DateTime(
+                        picked.year,
+                        picked.month,
+                        picked.day,
+                        now.hour,
+                        now.minute,
+                        now.second,
+                      );
+                    });
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: copperColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: copperColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 13, color: copperColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatSelectedDate(_selectedDate),
+                        style: AppFonts.mono(
+                          context,
+                          size: 11,
+                          color: copperColor,
+                          weight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
-          
-          // Description (autofocus, required)
+
+          // What did you do?
+          Text(
+            'What did you do?',
+            style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _descriptionController,
             autofocus: true,
-            style: AppFonts.ui(context),
+            style: AppFonts.ui(context, size: 15),
+            maxLines: 2,
+            minLines: 1,
             decoration: InputDecoration(
-              hintText: 'What win did you achieve today?',
+              hintText: 'e.g. Ran 5k in the morning',
               hintStyle: AppFonts.ui(context, color: theme.textMuted),
               filled: true,
               fillColor: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: theme.border)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.getRoleColor('copper', theme.isDark))),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: theme.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: theme.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: copperColor, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Description is required';
+                return 'Please describe what you did';
               }
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Category Chips Selector (single select, built from live category list)
-          Text('Select Category', style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.bold)),
+          // Focus selector
+          Text(
+            'Focus',
+            style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
           categoriesAsync.when(
             data: (categories) {
               if (categories.isEmpty) {
-                return Text('Create categories in Settings first.', style: AppFonts.ui(context, color: theme.textMuted));
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: theme.border),
+                  ),
+                  child: Text(
+                    'No focuses yet — add one in the Focus tab first.',
+                    style: AppFonts.ui(context, size: 13, color: theme.textMuted),
+                  ),
+                );
               }
-              
-              // Set default selection if not already selected
-              _selectedCategoryId ??= categories.first.id;
+
+              if (!categories.any((c) => c.id == _selectedCategoryId)) {
+                _selectedCategoryId = categories.first.id;
+              }
 
               return Wrap(
                 spacing: 8,
@@ -130,28 +223,44 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
                 children: categories.map((cat) {
                   final isSelected = _selectedCategoryId == cat.id;
                   final roleColor = AppColors.getRoleColor(cat.role, theme.isDark);
-                  
-                  return ChoiceChip(
-                    label: Text(cat.name),
-                    selected: isSelected,
-                    labelStyle: AppFonts.mono(
-                      context,
-                      size: 11,
-                      color: isSelected ? Colors.white : roleColor,
-                      weight: FontWeight.bold,
+
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedCategoryId = cat.id),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? roleColor : roleColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected ? roleColor : roleColor.withOpacity(0.25),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : roleColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            cat.name,
+                            style: AppFonts.mono(
+                              context,
+                              size: 11,
+                              color: isSelected ? Colors.white : roleColor,
+                              weight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    selectedColor: roleColor,
-                    backgroundColor: roleColor.withOpacity(0.12),
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      side: BorderSide(color: isSelected ? roleColor : roleColor.withOpacity(0.3)),
-                    ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedCategoryId = cat.id);
-                      }
-                    },
                   );
                 }).toList(),
               );
@@ -159,134 +268,51 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, stack) => Text('Error: $err'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Optional Project Text Field (autocompletes existing)
-          Text('Associate Project (Optional)', style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              TextFormField(
-                controller: _projectController,
-                style: AppFonts.ui(context),
-                decoration: InputDecoration(
-                  hintText: 'e.g. Flutter App, French Study',
-                  hintStyle: AppFonts.ui(context, color: theme.textMuted),
-                  filled: true,
-                  fillColor: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: theme.border)),
-                ),
-                onChanged: (text) {
-                  setState(() {
-                    _showSuggestions = text.trim().isNotEmpty && _projectSuggestions.isNotEmpty;
-                  });
-                },
-              ),
-              if (_showSuggestions && _projectSuggestions.isNotEmpty)
-                Positioned(
-                  top: 50,
-                  left: 0,
-                  right: 0,
-                  child: Material(
-                    elevation: 4,
-                    color: theme.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: theme.border),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      constraints: const BoxConstraints(maxHeight: 120),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _projectSuggestions.length,
-                        itemBuilder: (context, idx) {
-                          final suggestion = _projectSuggestions[idx];
-                          return ListTile(
-                            dense: true,
-                            title: Text(suggestion, style: AppFonts.ui(context)),
-                            onTap: () {
-                              setState(() {
-                                _projectController.text = suggestion;
-                                _showSuggestions = false;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+          // Notes (optional)
+          Text(
+            'Notes  (optional)',
+            style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.w600),
           ),
-          const SizedBox(height: 16),
-
-          // Tag input (enter/comma to add, tap to remove)
-          Text('Tags', style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _tagInputController,
-                  style: AppFonts.ui(context),
-                  decoration: InputDecoration(
-                    hintText: 'Type tag and hit comma/enter',
-                    hintStyle: AppFonts.ui(context, color: theme.textMuted),
-                    filled: true,
-                    fillColor: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: theme.border)),
-                  ),
-                  onSubmitted: (val) => _addTag(val),
-                  onChanged: (val) {
-                    if (val.endsWith(',')) {
-                      _addTag(val.replaceAll(',', ''));
-                    }
-                  },
-                ),
+          TextField(
+            controller: _notesController,
+            style: AppFonts.ui(context, size: 14),
+            maxLines: 3,
+            minLines: 1,
+            decoration: InputDecoration(
+              hintText: 'Any additional context or reflections…',
+              hintStyle: AppFonts.ui(context, color: theme.textMuted, size: 13),
+              filled: true,
+              fillColor: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: theme.border),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.add_circle, size: 28),
-                color: AppColors.getRoleColor('copper', theme.isDark),
-                onPressed: () => _addTag(_tagInputController.text),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: theme.border),
               ),
-            ],
-          ),
-          
-          if (_tags.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _tags.map((tag) {
-                return Chip(
-                  label: Text('#$tag'),
-                  labelStyle: AppFonts.mono(context, size: 11, color: theme.text),
-                  backgroundColor: theme.isDark ? AppColors.darkSurface : AppColors.lightBorder.withOpacity(0.3),
-                  deleteIcon: const Icon(Icons.close, size: 14),
-                  onDeleted: () {
-                    setState(() {
-                      _tags.remove(tag);
-                    });
-                  },
-                );
-              }).toList(),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: copperColor, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
-          ],
-          
-          const SizedBox(height: 24),
-          
+          ),
+          const SizedBox(height: 28),
+
           // Save Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.getRoleColor('copper', theme.isDark),
+                backgroundColor: copperColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
               ),
               onPressed: () => _save(db, context),
               child: Text(
@@ -303,10 +329,10 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
       return Dialog(
         backgroundColor: theme.surface,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         child: Container(
-          width: 500,
-          padding: const EdgeInsets.all(24),
+          width: 480,
+          padding: const EdgeInsets.all(28),
           child: formWidget,
         ),
       );
@@ -317,22 +343,29 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
         child: Container(
           decoration: BoxDecoration(
             color: theme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
           child: formWidget,
         ),
       );
     }
   }
 
-  void _addTag(String val) {
-    final cleaned = val.trim();
-    if (cleaned.isNotEmpty && !_tags.contains(cleaned)) {
-      setState(() {
-        _tags.add(cleaned);
-        _tagInputController.clear();
-      });
+  String _formatSelectedDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDay = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(selectedDay).inDays;
+
+    if (diff == 0) {
+      return 'Today, ${DateFormat('MMM d').format(date)}';
+    } else if (diff == 1) {
+      return 'Yesterday';
+    } else if (diff == -1) {
+      return 'Tomorrow';
+    } else {
+      return DateFormat('MMM d, yyyy').format(date);
     }
   }
 
@@ -340,25 +373,36 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategoryId == null) return;
 
-    final desc = _descriptionController.text.trim();
-    final proj = _projectController.text.trim();
-
-    await db.saveQuickCapture(
-      description: desc,
-      categoryId: _selectedCategoryId!,
-      projectName: proj.isNotEmpty ? proj : null,
-      tags: _tags,
-    );
-
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Win captured successfully!', style: AppFonts.ui(context, color: Colors.white)),
-          backgroundColor: AppColors.getRoleColor('sage', ThemeProvider.of(context).isDark),
-          duration: const Duration(seconds: 2),
-        ),
+    try {
+      await db.saveQuickCapture(
+        description: _descriptionController.text.trim(),
+        categoryId: _selectedCategoryId!,
+        notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+        date: _selectedDate,
       );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Entry saved!', style: AppFonts.ui(context, color: Colors.white)),
+            backgroundColor: AppColors.getRoleColor('sage', ThemeProvider.of(context).isDark),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving entry: $e', style: AppFonts.ui(context, color: Colors.white)),
+            backgroundColor: AppColors.getRoleColor('rose', ThemeProvider.of(context).isDark),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 }

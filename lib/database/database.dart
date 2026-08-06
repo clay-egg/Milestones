@@ -19,7 +19,8 @@ class Entries extends Table {
   TextColumn get description => text()();
   IntColumn get categoryId => integer().references(Categories, #id)();
   TextColumn get project => text().nullable()();
-  TextColumn get tags => text()(); // comma separated list
+  TextColumn get tags => text()(); // kept for legacy, not shown in UI
+  TextColumn get notes => text().nullable()(); // optional user notes
 }
 
 class Projects extends Table {
@@ -95,7 +96,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -216,84 +217,52 @@ class AppDatabase extends _$AppDatabase {
             label: 'Deploy first personal app to macOS App Store',
           ));
         },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // v2: add notes column to entries
+            await m.addColumn(entries, entries.notes);
+          }
+        },
+        beforeOpen: (details) async {
+          // Safety check: ensure notes column exists in SQLite table if upgrading from legacy schema
+          try {
+            await customStatement('ALTER TABLE entries ADD COLUMN notes TEXT;');
+          } catch (_) {
+            // Already exists
+          }
+        },
       );
 
   // Helper CRUD actions
   
-  // 1. Save Timeline Entry & trigger side-effects
+  // 1. Save Timeline Entry
   Future<void> saveQuickCapture({
     required String description,
     required int categoryId,
-    String? projectName,
-    required List<String> tags,
+    String? notes,
+    DateTime? date,
   }) async {
-    // A. Fetch Category for role check
-    final category = await (select(categories)..where((c) => c.id.equals(categoryId))).getSingle();
-    final role = category.role.toLowerCase();
+    int validCatId = categoryId;
+    final catExists = await (select(categories)..where((c) => c.id.equals(categoryId))).getSingleOrNull();
+    if (catExists == null) {
+      final available = await select(categories).get();
+      if (available.isNotEmpty) {
+        validCatId = available.first.id;
+      } else {
+        validCatId = await into(categories).insert(CategoriesCompanion.insert(
+          name: 'General',
+          role: 'copper',
+        ));
+      }
+    }
 
-    // B. Save Entry to Timeline
-    final entryId = await into(entries).insert(EntriesCompanion.insert(
-      date: DateTime.now(),
+    await into(entries).insert(EntriesCompanion.insert(
+      date: date ?? DateTime.now(),
       description: description,
-      categoryId: categoryId,
-      project: Value(projectName != null && projectName.trim().isNotEmpty ? projectName.trim() : null),
-      tags: tags.join(','),
+      categoryId: validCatId,
+      tags: '',
+      notes: Value(notes?.trim().isNotEmpty == true ? notes!.trim() : null),
     ));
-
-    // C. Side Effect: project association
-    if (projectName != null && projectName.trim().isNotEmpty) {
-      final pName = projectName.trim();
-      final existingProject = await (select(projects)..where((p) => p.name.collate(Collate.noCase).equals(pName))).getSingleOrNull();
-
-      if (existingProject != null) {
-        final List steps = jsonDecode(existingProject.stepsJson);
-        steps.add({'title': description, 'completed': true});
-        await (update(projects)..where((p) => p.id.equals(existingProject.id))).write(
-          ProjectsCompanion(stepsJson: Value(jsonEncode(steps))),
-        );
-      } else {
-        await into(projects).insert(ProjectsCompanion.insert(
-          name: pName,
-          stepsJson: jsonEncode([{'title': description, 'completed': true}]),
-          achievementsJson: jsonEncode([]),
-        ));
-      }
-    }
-
-    // D. Side Effect: goal creation
-    if (role == 'goal') {
-      final currentSettings = await (select(userSettings)).getSingle();
-      final stages = currentSettings.stagesJson.split(',');
-      final firstStage = stages.isNotEmpty ? stages.first : 'Idea';
-      final targetStage = stages.isNotEmpty ? stages.last : 'Launch';
-      
-      await into(goals).insert(GoalsCompanion.insert(
-        name: description,
-        currentStage: firstStage,
-        targetStage: targetStage,
-      ));
-    }
-
-    // E. Side Effect: skills association
-    for (final tag in tags) {
-      final tName = tag.trim();
-      if (tName.isEmpty) continue;
-      final existingSkill = await (select(skills)..where((s) => s.name.collate(Collate.noCase).equals(tName))).getSingleOrNull();
-
-      if (existingSkill != null) {
-        final List evidence = jsonDecode(existingSkill.evidenceJson);
-        evidence.add(description);
-        await (update(skills)..where((s) => s.id.equals(existingSkill.id))).write(
-          SkillsCompanion(evidenceJson: Value(jsonEncode(evidence))),
-        );
-      } else {
-        await into(skills).insert(SkillsCompanion.insert(
-          name: tName,
-          progressPercent: 10.0,
-          evidenceJson: jsonEncode([description]),
-        ));
-      }
-    }
   }
 
   // 2. Settings CRUD
@@ -324,7 +293,7 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  // Categories CRD
+  // Categories CRUD
   Future<void> addCategory(String name, String role) async {
     await into(categories).insert(CategoriesCompanion.insert(name: name, role: role));
   }
@@ -332,6 +301,15 @@ class AppDatabase extends _$AppDatabase {
   Future<void> renameCategory(int id, String newName) async {
     await (update(categories)..where((c) => c.id.equals(id))).write(
       CategoriesCompanion(name: Value(newName)),
+    );
+  }
+
+  Future<void> updateCategory(int id, {required String name, required String role}) async {
+    await (update(categories)..where((c) => c.id.equals(id))).write(
+      CategoriesCompanion(
+        name: Value(name),
+        role: Value(role),
+      ),
     );
   }
 
