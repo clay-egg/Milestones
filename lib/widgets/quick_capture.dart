@@ -6,21 +6,22 @@ import '../widgets/common_widgets.dart';
 import '../database/database.dart';
 
 class QuickCapture extends ConsumerStatefulWidget {
-  const QuickCapture({Key? key}) : super(key: key);
+  final Entrie? existingEntry;
+  const QuickCapture({Key? key, this.existingEntry}) : super(key: key);
 
-  static void show(BuildContext context) {
+  static void show(BuildContext context, {Entrie? existingEntry}) {
     final width = MediaQuery.of(context).size.width;
     if (width > 880) {
       showDialog(
         context: context,
-        builder: (context) => const QuickCapture(),
+        builder: (context) => QuickCapture(existingEntry: existingEntry),
       );
     } else {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => const QuickCapture(),
+        builder: (context) => QuickCapture(existingEntry: existingEntry),
       );
     }
   }
@@ -36,6 +37,17 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
 
   int? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingEntry != null) {
+      _descriptionController.text = widget.existingEntry!.description;
+      _notesController.text = widget.existingEntry!.notes ?? '';
+      _selectedCategoryId = widget.existingEntry!.categoryId;
+      _selectedDate = widget.existingEntry!.date;
+    }
+  }
 
   @override
   void dispose() {
@@ -63,11 +75,24 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Log Entry', style: AppFonts.heading(context, size: 18)),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                color: theme.textMuted,
-                onPressed: () => Navigator.pop(context),
+              Text(
+                widget.existingEntry != null ? 'Edit Entry' : 'Log Entry',
+                style: AppFonts.heading(context, size: 18),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.existingEntry != null)
+                    IconButton(
+                      icon: Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.getRoleColor('rose', theme.isDark)),
+                      onPressed: () => _confirmDeleteInModal(context, db, widget.existingEntry!),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    color: theme.textMuted,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ],
           ),
@@ -374,18 +399,31 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
     if (_selectedCategoryId == null) return;
 
     try {
-      await db.saveQuickCapture(
-        description: _descriptionController.text.trim(),
-        categoryId: _selectedCategoryId!,
-        notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
-        date: _selectedDate,
-      );
+      if (widget.existingEntry != null) {
+        await db.updateEntry(
+          widget.existingEntry!.id,
+          description: _descriptionController.text.trim(),
+          categoryId: _selectedCategoryId!,
+          notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+          date: _selectedDate,
+        );
+      } else {
+        await db.saveQuickCapture(
+          description: _descriptionController.text.trim(),
+          categoryId: _selectedCategoryId!,
+          notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+          date: _selectedDate,
+        );
+      }
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Entry saved!', style: AppFonts.ui(context, color: Colors.white)),
+            content: Text(
+              widget.existingEntry != null ? 'Entry updated!' : 'Entry saved!',
+              style: AppFonts.ui(context, color: Colors.white),
+            ),
             backgroundColor: AppColors.getRoleColor('sage', ThemeProvider.of(context).isDark),
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
@@ -404,5 +442,38 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
         );
       }
     }
+  }
+
+  void _confirmDeleteInModal(BuildContext context, AppDatabase db, Entrie entry) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final t = ThemeProvider.of(ctx);
+        final roseColor = AppColors.getRoleColor('rose', t.isDark);
+        return AlertDialog(
+          backgroundColor: t.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text('Delete Entry?', style: AppFonts.heading(ctx, size: 15)),
+          content: Text(
+            'Are you sure you want to remove this log entry?',
+            style: AppFonts.ui(ctx, size: 13, color: t.textMuted),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: AppFonts.ui(ctx, color: t.textMuted)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await (db.delete(db.entries)..where((e) => e.id.equals(entry.id))).go();
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: Text('Delete', style: AppFonts.ui(ctx, color: roseColor, weight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

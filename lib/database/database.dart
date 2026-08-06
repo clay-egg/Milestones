@@ -265,6 +265,23 @@ class AppDatabase extends _$AppDatabase {
     ));
   }
 
+  Future<void> updateEntry(
+    int id, {
+    required String description,
+    required int categoryId,
+    String? notes,
+    required DateTime date,
+  }) async {
+    await (update(entries)..where((e) => e.id.equals(id))).write(
+      EntriesCompanion(
+        description: Value(description),
+        categoryId: Value(categoryId),
+        notes: Value(notes?.trim().isNotEmpty == true ? notes!.trim() : null),
+        date: Value(date),
+      ),
+    );
+  }
+
   // 2. Settings CRUD
   Future<void> updateSettings({
     required String userName,
