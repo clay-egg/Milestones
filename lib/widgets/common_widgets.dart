@@ -206,7 +206,15 @@ class _MilestoneCardState extends State<MilestoneCard> {
       decoration: BoxDecoration(
         color: theme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor, width: 1.0),
+        border: Border(
+          top: BorderSide(color: borderColor, width: 1.0),
+          right: BorderSide(color: borderColor, width: 1.0),
+          bottom: BorderSide(color: borderColor, width: 1.0),
+          left: BorderSide(
+            color: leftBorderColor ?? borderColor,
+            width: widget.role != null ? 3.5 : 1.0,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
             color: isDark
@@ -217,24 +225,7 @@ class _MilestoneCardState extends State<MilestoneCard> {
           )
         ],
       ),
-      child: widget.role != null
-          ? IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: 3,
-                    decoration: BoxDecoration(
-                      color: leftBorderColor,
-                      borderRadius: BorderRadius.circular(1.5),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: widget.child),
-                ],
-              ),
-            )
-          : widget.child,
+      child: widget.child,
     );
 
     return MouseRegion(

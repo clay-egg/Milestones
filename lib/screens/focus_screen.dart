@@ -87,7 +87,7 @@ class FocusScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
 
             // Focus Cards Grid / List
             categoriesAsync.when(
@@ -101,10 +101,11 @@ class FocusScreen extends ConsumerWidget {
                     final crossAxisCount = constraints.maxWidth > 880 ? 3 : (constraints.maxWidth > 550 ? 2 : 1);
                     if (crossAxisCount == 1) {
                       return ListView.separated(
+                        padding: EdgeInsets.zero,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: focuses.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => const SizedBox(height: 14),
                         itemBuilder: (context, index) {
                           final focus = focuses[index];
                           final totalCount = totalCounts[focus.id] ?? 0;
@@ -115,13 +116,14 @@ class FocusScreen extends ConsumerWidget {
                     }
 
                     return GridView.builder(
+                      padding: EdgeInsets.zero,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 14,
                         mainAxisSpacing: 14,
-                        mainAxisExtent: 160,
+                        mainAxisExtent: 105,
                       ),
                       itemCount: focuses.length,
                       itemBuilder: (context, index) {
@@ -292,21 +294,6 @@ class FocusScreen extends ConsumerWidget {
                 ],
               ),
             ],
-
-            const SizedBox(height: 12),
-
-            // Footer Badge: Total Logged Entries
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '$totalCount ${totalCount == 1 ? 'total entry' : 'total entries'}',
-                style: AppFonts.mono(context, size: 9.5, color: color, weight: FontWeight.bold),
-              ),
-            ),
           ],
         ),
       ),

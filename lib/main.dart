@@ -93,7 +93,7 @@ class AppShell extends ConsumerWidget {
     final pageSubtitles = const [
       'Timeline',
       'Focus',
-      'Achievements',
+      'Wins & Streaks',
       'Settings',
     ];
 
@@ -373,7 +373,7 @@ class AppShell extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           SidebarNavItem(
-            label: 'Achievements',
+            label: 'Wins & Streaks',
             icon: Icons.military_tech_rounded,
             isSelected: activeIndex == 2,
             onTap: () => ref.read(navigationIndexProvider.notifier).state = 2,
