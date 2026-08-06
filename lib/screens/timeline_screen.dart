@@ -16,6 +16,7 @@ class TimelineScreen extends ConsumerStatefulWidget {
 class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   int? _selectedFilterCategoryId;
   String _selectedMonthKey = 'ALL'; // 'ALL' or 'YYYY-MM'
+  int _weekOffset = 0; // 0 = Current Week, -1 = Prev Week, etc.
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +50,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Sleek Weekly Activity Bar Chart
+                // 1. Sleek Weekly Activity Bar Chart with Week Switcher
                 _buildWeeklyChartCard(context, allEntries, theme),
-                const SizedBox(height: 20),
+                const SizedBox(height: 26),
 
                 // 2. Section Header + Month Selector Dropdown + Entry Count
                 Row(
@@ -177,17 +178,18 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
 
                 // 3. Focus Category Filter Chips (Compact Micro Chips)
                 categoriesAsync.when(
                   data: (categories) {
                     if (categories.isEmpty) return const SizedBox.shrink();
                     return Container(
-                      height: 24,
-                      margin: const EdgeInsets.only(bottom: 6),
+                      height: 28,
+                      margin: const EdgeInsets.only(bottom: 18),
                       child: ListView(
                         scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.zero,
                         physics: const BouncingScrollPhysics(),
                         children: [
                           // "All" Filter Chip
@@ -195,8 +197,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                             onTap: () => setState(() => _selectedFilterCategoryId = null),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              margin: const EdgeInsets.only(right: 5),
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                              margin: const EdgeInsets.only(right: 6),
                               decoration: BoxDecoration(
                                 color: _selectedFilterCategoryId == null
                                     ? copperColor
@@ -214,7 +216,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                   'All Focuses',
                                   style: AppFonts.mono(
                                     context,
-                                    size: 9,
+                                    size: 9.5,
                                     color: _selectedFilterCategoryId == null ? Colors.white : copperColor,
                                     weight: FontWeight.bold,
                                   ),
@@ -233,8 +235,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                               }),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                margin: const EdgeInsets.only(right: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                margin: const EdgeInsets.only(right: 6),
                                 decoration: BoxDecoration(
                                   color: isSelected ? catColor : catColor.withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(12),
@@ -260,7 +262,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                       cat.name,
                                       style: AppFonts.mono(
                                         context,
-                                        size: 9,
+                                        size: 9.5,
                                         color: isSelected ? Colors.white : catColor,
                                         weight: FontWeight.bold,
                                       ),
@@ -294,31 +296,63 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         error: (err, stack) => Center(child: Text('Error loading timeline: $err')),
       ),
       floatingActionButton: MediaQuery.of(context).size.width <= 880
-          ? FloatingActionButton(
-              onPressed: () => QuickCapture.show(context),
-              backgroundColor: copperColor,
-              elevation: 2,
-              child: const Icon(Icons.add, color: Colors.white, size: 24),
+          ? GestureDetector(
+              onTap: () => QuickCapture.show(context),
+              child: Container(
+                height: 42,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: theme.surface,
+                  borderRadius: BorderRadius.circular(21),
+                  border: Border.all(color: copperColor.withOpacity(0.4), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.isDark ? Colors.black.withOpacity(0.35) : copperColor.withOpacity(0.18),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, size: 18, color: copperColor),
+                    const SizedBox(width: 6),
+                    Text(
+                      'LOG ENTRY',
+                      style: AppFonts.mono(
+                        context,
+                        size: 11,
+                        color: copperColor,
+                        weight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             )
           : null,
     );
   }
 
-  // --- SLEEK WEEKLY ACTIVITY BAR CHART ---
+  // --- SLEEK WEEKLY ACTIVITY BAR CHART WITH WEEK SWITCHER ---
   Widget _buildWeeklyChartCard(BuildContext context, List<EntryWithCategory> allEntries, ThemeDetails theme) {
     final copperColor = AppColors.getRoleColor('copper', theme.isDark);
     final now = DateTime.now();
 
-    // Determine current week's Monday (Mon=1, Sun=7)
+    // Determine target week's Monday based on _weekOffset (0 = Current Week, -1 = Last Week, etc.)
     final currentMonday = now.subtract(Duration(days: now.weekday - 1));
+    final targetMonday = currentMonday.add(Duration(days: _weekOffset * 7));
+    final targetSunday = targetMonday.add(const Duration(days: 6));
+
     final weekDays = List.generate(7, (i) {
-      final day = currentMonday.add(Duration(days: i));
+      final day = targetMonday.add(Duration(days: i));
       return DateTime(day.year, day.month, day.day);
     });
 
-    // Count entries per day of current week
+    // Count entries per day
     final Map<String, int> weekCounts = {};
-    int thisWeekTotal = 0;
+    int weekTotal = 0;
 
     for (final e in allEntries) {
       final d = e.entry.date;
@@ -332,7 +366,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     for (final day in weekDays) {
       final key = DateFormat('yyyy-MM-dd').format(day);
       final count = weekCounts[key] ?? 0;
-      thisWeekTotal += count;
+      weekTotal += count;
       if (count > maxCount) maxCount = count;
 
       final isToday = day.year == now.year && day.month == now.month && day.day == now.day;
@@ -346,8 +380,18 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       });
     }
 
+    // Label text for badge
+    String badgeLabel;
+    if (_weekOffset == 0) {
+      badgeLabel = '$weekTotal logged this week';
+    } else if (_weekOffset == -1) {
+      badgeLabel = 'Last week ($weekTotal)';
+    } else {
+      badgeLabel = '${DateFormat('MMM d').format(targetMonday)} - ${DateFormat('MMM d').format(targetSunday)} ($weekTotal)';
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: theme.surface,
         borderRadius: BorderRadius.circular(12),
@@ -381,16 +425,54 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: copperColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$thisWeekTotal logged this week',
-                  style: AppFonts.mono(context, size: 9, color: copperColor, weight: FontWeight.bold),
-                ),
+
+              // Week Switcher Controls (< Badge >)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Previous Week (<)
+                  GestureDetector(
+                    onTap: () => setState(() => _weekOffset--),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: Icon(
+                        Icons.chevron_left_rounded,
+                        size: 18,
+                        color: theme.textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+
+                  // Week Badge / Date Range
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: copperColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      badgeLabel,
+                      style: AppFonts.mono(context, size: 9, color: copperColor, weight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+
+                  // Next Week (>)
+                  GestureDetector(
+                    onTap: _weekOffset < 0 ? () => setState(() => _weekOffset++) : null,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: _weekOffset < 0 ? theme.textMuted : theme.textMuted.withOpacity(0.25),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -463,28 +545,36 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     ThemeDetails theme,
   ) {
     // Group entries by Date (YYYY-MM-DD) preserving DESC order
-    final Map<String, List<EntryWithCategory>> grouped = {};
+    final Map<String, List<EntryWithCategory>> groupedByDate = {};
     for (final item in entries) {
       final dateKey = DateFormat('yyyy-MM-dd').format(item.entry.date);
-      grouped.putIfAbsent(dateKey, () => []).add(item);
+      groupedByDate.putIfAbsent(dateKey, () => []).add(item);
     }
 
-    final dayKeys = grouped.keys.toList();
+    final dayKeys = groupedByDate.keys.toList();
     final copperColor = AppColors.getRoleColor('copper', theme.isDark);
+    final db = ref.read(databaseProvider);
 
     return ListView.builder(
       shrinkWrap: true,
+      padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: dayKeys.length,
       itemBuilder: (context, dayIndex) {
         final dateKey = dayKeys[dayIndex];
-        final dayEntries = grouped[dateKey]!;
+        final dayEntries = groupedByDate[dateKey]!;
         final firstDate = dayEntries.first.entry.date;
 
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
         final entryDay = DateTime(firstDate.year, firstDate.month, firstDate.day);
         final diff = today.difference(entryDay).inDays;
+
+        // Group dayEntries by Focus Category ID so same date + same focus sit in ONE card box!
+        final Map<int, List<EntryWithCategory>> catGrouped = {};
+        for (final item in dayEntries) {
+          catGrouped.putIfAbsent(item.category.id, () => []).add(item);
+        }
 
         // Consistent & Minimalist Date Formatting (TODAY · AUG 6 / YESTERDAY · AUG 5 / AUG 3, 2026)
         String dateLabel;
@@ -497,6 +587,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         }
 
         final isLastGroup = dayIndex == dayKeys.length - 1;
+        final categoryGroupsList = catGrouped.values.toList();
 
         return Stack(
           children: [
@@ -576,39 +667,109 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
                   const SizedBox(height: 8),
 
-                  // List of Entries under this Date Node
+                  // Cards Grouped by Focus Category (One Card Per Focus Per Day)
                   Padding(
                     padding: const EdgeInsets.only(left: 30.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: dayEntries.asMap().entries.map((entryItem) {
-                        final idx = entryItem.key;
-                        final item = entryItem.value;
-                        final entry = item.entry;
-                        final category = item.category;
-                        final db = ref.read(databaseProvider);
+                      children: categoryGroupsList.asMap().entries.map((catGroupItem) {
+                        final catIdx = catGroupItem.key;
+                        final catEntries = catGroupItem.value;
+                        final category = catEntries.first.category;
                         final catColor = AppColors.getRoleColor(category.role, theme.isDark);
+                        final isLastCatCard = catIdx == categoryGroupsList.length - 1;
 
                         return Container(
-                          margin: EdgeInsets.only(bottom: idx == dayEntries.length - 1 ? 0 : 8),
+                          margin: EdgeInsets.only(bottom: isLastCatCard ? 0 : 8),
                           decoration: BoxDecoration(
                             color: theme.surface,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: theme.border.withOpacity(0.4), width: 0.5),
                           ),
-                          child: InkWell(
-                            onTap: () => QuickCapture.show(context, existingEntry: entry),
-                            onLongPress: () => _confirmDeleteEntry(context, db, entry),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            child: catEntries.length == 1
+                                // --- SINGLE ENTRY: Sleek 1-Row Inline Layout ---
+                                ? InkWell(
+                                    onTap: () => QuickCapture.show(context, existingEntry: catEntries.first.entry),
+                                    onLongPress: () => _confirmDeleteEntry(context, db, catEntries.first.entry),
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Focus Category Badge Pill
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: catColor.withOpacity(0.08),
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: catColor.withOpacity(0.2), width: 0.7),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Container(
+                                                    width: 4,
+                                                    height: 4,
+                                                    decoration: BoxDecoration(
+                                                      color: catColor,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    category.name.toUpperCase(),
+                                                    style: AppFonts.mono(
+                                                      context,
+                                                      size: 9,
+                                                      color: catColor,
+                                                      weight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+
+                                            // Description Text
+                                            Expanded(
+                                              child: Text(
+                                                catEntries.first.entry.description,
+                                                style: AppFonts.ui(
+                                                  context,
+                                                  size: 13,
+                                                  color: theme.text,
+                                                  weight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (catEntries.first.entry.notes != null && catEntries.first.entry.notes!.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Padding(
+                                            padding: const EdgeInsets.only(left: 2),
+                                            child: Text(
+                                              catEntries.first.entry.notes!,
+                                              style: AppFonts.ui(
+                                                context,
+                                                size: 12,
+                                                color: theme.textMuted,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  )
+                                // --- MULTI-ENTRY: Grouped Card with Header Pill & Bullets ---
+                                : Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Focus Category Badge Pill with Micro Dot (4px)
+                                      // Focus Category Header Pill at top of Card Box
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
@@ -640,41 +801,68 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(height: 6),
 
-                                      // Description Text
-                                      Expanded(
-                                        child: Text(
-                                          entry.description,
-                                          style: AppFonts.ui(
-                                            context,
-                                            size: 13,
-                                            color: theme.text,
-                                            weight: FontWeight.w500,
+                                      // Bulleted Entries List
+                                      ...catEntries.asMap().entries.map((eMap) {
+                                        final entryIdx = eMap.key;
+                                        final item = eMap.value;
+                                        final entry = item.entry;
+                                        final isLastEntry = entryIdx == catEntries.length - 1;
+
+                                        return InkWell(
+                                          onTap: () => QuickCapture.show(context, existingEntry: entry),
+                                          onLongPress: () => _confirmDeleteEntry(context, db, entry),
+                                          borderRadius: BorderRadius.circular(6),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 2),
+                                            margin: EdgeInsets.only(bottom: isLastEntry ? 0 : 3),
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '• ',
+                                                  style: AppFonts.ui(
+                                                    context,
+                                                    size: 13,
+                                                    color: catColor.withOpacity(0.7),
+                                                    weight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        entry.description,
+                                                        style: AppFonts.ui(
+                                                          context,
+                                                          size: 13,
+                                                          color: theme.text,
+                                                          weight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      if (entry.notes != null && entry.notes!.isNotEmpty) ...[
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          entry.notes!,
+                                                          style: AppFonts.ui(
+                                                            context,
+                                                            size: 12,
+                                                            color: theme.textMuted,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ),
+                                        );
+                                      }).toList(),
                                     ],
                                   ),
-
-                                  // Optional Notes (if present)
-                                  if (entry.notes != null && entry.notes!.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 2),
-                                      child: Text(
-                                        entry.notes!,
-                                        style: AppFonts.ui(
-                                          context,
-                                          size: 12,
-                                          color: theme.textMuted,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
                           ),
                         );
                       }).toList(),
@@ -742,7 +930,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Tap Capture or + to log an entry.',
+            'Tap + LOG ENTRY to record your progress.',
             style: AppFonts.ui(context, size: 13, color: theme.textMuted),
           ),
         ],

@@ -192,29 +192,6 @@ class AppShell extends ConsumerWidget {
                 ),
               ],
             ),
-            // Quick Capture button
-            GestureDetector(
-              onTap: () => QuickCapture.show(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: copperColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: copperColor.withOpacity(0.3), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.bolt_rounded, size: 14, color: copperColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Capture',
-                      style: AppFonts.mono(context, size: 10, color: copperColor, weight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ),
         ],
       ),
     );
