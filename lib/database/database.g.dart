@@ -2116,12 +2116,16 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
   final String currentChapterGoal;
   final bool isDarkMode;
   final String stagesJson;
+  final bool isReminderEnabled;
+  final String reminderTime;
   UserSetting(
       {required this.id,
       required this.userName,
       required this.currentChapterGoal,
       required this.isDarkMode,
-      required this.stagesJson});
+      required this.stagesJson,
+      this.isReminderEnabled = false,
+      this.reminderTime = '20:00'});
   factory UserSetting.fromData(Map<String, dynamic> data, {String? prefix}) {
     final effectivePrefix = prefix ?? '';
     return UserSetting(
@@ -2135,6 +2139,10 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           .mapFromDatabaseResponse(data['${effectivePrefix}is_dark_mode'])!,
       stagesJson: const StringType()
           .mapFromDatabaseResponse(data['${effectivePrefix}stages_json'])!,
+      isReminderEnabled: const BoolType()
+          .mapFromDatabaseResponse(data['${effectivePrefix}is_reminder_enabled']) ?? false,
+      reminderTime: const StringType()
+          .mapFromDatabaseResponse(data['${effectivePrefix}reminder_time']) ?? '20:00',
     );
   }
   @override
@@ -2145,6 +2153,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
     map['current_chapter_goal'] = Variable<String>(currentChapterGoal);
     map['is_dark_mode'] = Variable<bool>(isDarkMode);
     map['stages_json'] = Variable<String>(stagesJson);
+    map['is_reminder_enabled'] = Variable<bool>(isReminderEnabled);
+    map['reminder_time'] = Variable<String>(reminderTime);
     return map;
   }
 
@@ -2155,6 +2165,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       currentChapterGoal: Value(currentChapterGoal),
       isDarkMode: Value(isDarkMode),
       stagesJson: Value(stagesJson),
+      isReminderEnabled: Value(isReminderEnabled),
+      reminderTime: Value(reminderTime),
     );
   }
 
@@ -2168,6 +2180,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           serializer.fromJson<String>(json['currentChapterGoal']),
       isDarkMode: serializer.fromJson<bool>(json['isDarkMode']),
       stagesJson: serializer.fromJson<String>(json['stagesJson']),
+      isReminderEnabled: serializer.fromJson<bool>(json['isReminderEnabled']),
+      reminderTime: serializer.fromJson<String>(json['reminderTime']),
     );
   }
   @override
@@ -2179,6 +2193,8 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
       'currentChapterGoal': serializer.toJson<String>(currentChapterGoal),
       'isDarkMode': serializer.toJson<bool>(isDarkMode),
       'stagesJson': serializer.toJson<String>(stagesJson),
+      'isReminderEnabled': serializer.toJson<bool>(isReminderEnabled),
+      'reminderTime': serializer.toJson<String>(reminderTime),
     };
   }
 
@@ -2187,13 +2203,17 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           String? userName,
           String? currentChapterGoal,
           bool? isDarkMode,
-          String? stagesJson}) =>
+          String? stagesJson,
+          bool? isReminderEnabled,
+          String? reminderTime}) =>
       UserSetting(
         id: id ?? this.id,
         userName: userName ?? this.userName,
         currentChapterGoal: currentChapterGoal ?? this.currentChapterGoal,
         isDarkMode: isDarkMode ?? this.isDarkMode,
         stagesJson: stagesJson ?? this.stagesJson,
+        isReminderEnabled: isReminderEnabled ?? this.isReminderEnabled,
+        reminderTime: reminderTime ?? this.reminderTime,
       );
   @override
   String toString() {
@@ -2202,14 +2222,16 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           ..write('userName: $userName, ')
           ..write('currentChapterGoal: $currentChapterGoal, ')
           ..write('isDarkMode: $isDarkMode, ')
-          ..write('stagesJson: $stagesJson')
+          ..write('stagesJson: $stagesJson, ')
+          ..write('isReminderEnabled: $isReminderEnabled, ')
+          ..write('reminderTime: $reminderTime')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, userName, currentChapterGoal, isDarkMode, stagesJson);
+      Object.hash(id, userName, currentChapterGoal, isDarkMode, stagesJson, isReminderEnabled, reminderTime);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2218,7 +2240,9 @@ class UserSetting extends DataClass implements Insertable<UserSetting> {
           other.userName == this.userName &&
           other.currentChapterGoal == this.currentChapterGoal &&
           other.isDarkMode == this.isDarkMode &&
-          other.stagesJson == this.stagesJson);
+          other.stagesJson == this.stagesJson &&
+          other.isReminderEnabled == this.isReminderEnabled &&
+          other.reminderTime == this.reminderTime);
 }
 
 class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
@@ -2227,12 +2251,16 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
   final Value<String> currentChapterGoal;
   final Value<bool> isDarkMode;
   final Value<String> stagesJson;
+  final Value<bool> isReminderEnabled;
+  final Value<String> reminderTime;
   const UserSettingsCompanion({
     this.id = const Value.absent(),
     this.userName = const Value.absent(),
     this.currentChapterGoal = const Value.absent(),
     this.isDarkMode = const Value.absent(),
     this.stagesJson = const Value.absent(),
+    this.isReminderEnabled = const Value.absent(),
+    this.reminderTime = const Value.absent(),
   });
   UserSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -2240,6 +2268,8 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     this.currentChapterGoal = const Value.absent(),
     this.isDarkMode = const Value.absent(),
     this.stagesJson = const Value.absent(),
+    this.isReminderEnabled = const Value.absent(),
+    this.reminderTime = const Value.absent(),
   });
   static Insertable<UserSetting> custom({
     Expression<int>? id,
@@ -2247,6 +2277,8 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
     Expression<String>? currentChapterGoal,
     Expression<bool>? isDarkMode,
     Expression<String>? stagesJson,
+    Expression<bool>? isReminderEnabled,
+    Expression<String>? reminderTime,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2255,6 +2287,8 @@ class UserSettingsCompanion extends UpdateCompanion<UserSetting> {
         'current_chapter_goal': currentChapterGoal,
       if (isDarkMode != null) 'is_dark_mode': isDarkMode,
       if (stagesJson != null) 'stages_json': stagesJson,
+      if (isReminderEnabled != null) 'is_reminder_enabled': isReminderEnabled,
+      if (reminderTime != null) 'reminder_time': reminderTime,
     });
   }
 

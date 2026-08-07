@@ -92,6 +92,8 @@ class UserSettings extends Table {
   TextColumn get currentChapterGoal => text().withDefault(const Constant(''))();
   BoolColumn get isDarkMode => boolean().withDefault(const Constant(true))();
   TextColumn get stagesJson => text().withDefault(const Constant('Idea,Research,Prototype,Launch'))();
+  BoolColumn get isReminderEnabled => boolean().withDefault(const Constant(false))();
+  TextColumn get reminderTime => text().withDefault(const Constant('20:00'))();
 }
 
 LazyDatabase _openConnection() {
@@ -276,6 +278,16 @@ class AppDatabase extends _$AppDatabase {
           } catch (_) {
             // Already exists
           }
+          try {
+            await customStatement('ALTER TABLE user_settings ADD COLUMN is_reminder_enabled INTEGER DEFAULT 0;');
+          } catch (_) {
+            // Already exists
+          }
+          try {
+            await customStatement('ALTER TABLE user_settings ADD COLUMN reminder_time TEXT DEFAULT "20:00";');
+          } catch (_) {
+            // Already exists
+          }
         },
       );
 
@@ -415,6 +427,8 @@ class AppDatabase extends _$AppDatabase {
     String? currentChapterGoal,
     required bool isDarkMode,
     required String stagesJson,
+    bool? isReminderEnabled,
+    String? reminderTime,
   }) async {
     final settingsList = await select(userSettings).get();
     if (settingsList.isEmpty) {
@@ -423,6 +437,8 @@ class AppDatabase extends _$AppDatabase {
         currentChapterGoal: Value(currentChapterGoal ?? ''),
         isDarkMode: Value(isDarkMode),
         stagesJson: Value(stagesJson),
+        isReminderEnabled: Value(isReminderEnabled ?? false),
+        reminderTime: Value(reminderTime ?? '20:00'),
       ));
     } else {
       final id = settingsList.first.id;
@@ -432,6 +448,8 @@ class AppDatabase extends _$AppDatabase {
           currentChapterGoal: currentChapterGoal != null ? Value(currentChapterGoal) : const Value.absent(),
           isDarkMode: Value(isDarkMode),
           stagesJson: Value(stagesJson),
+          isReminderEnabled: isReminderEnabled != null ? Value(isReminderEnabled) : const Value.absent(),
+          reminderTime: reminderTime != null ? Value(reminderTime) : const Value.absent(),
         ),
       );
     }

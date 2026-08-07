@@ -907,3 +907,171 @@ class _InlineCalendarPickerState extends State<InlineCalendarPicker> {
     );
   }
 }
+
+Future<TimeOfDay?> showThemedTimePicker({
+  required BuildContext context,
+  required TimeOfDay initialTime,
+}) async {
+  int hour = initialTime.hourOfPeriod == 0 ? 12 : initialTime.hourOfPeriod;
+  int minute = initialTime.minute;
+  bool isAm = initialTime.period == DayPeriod.am;
+
+  return showDialog<TimeOfDay>(
+    context: context,
+    builder: (context) {
+      final t = ThemeProvider.of(context);
+      final copperColor = AppColors.getRoleColor('copper', t.isDark);
+      final hourController = TextEditingController(text: hour.toString().padLeft(2, '0'));
+      final minuteController = TextEditingController(text: minute.toString().padLeft(2, '0'));
+
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: t.surface,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: t.border, width: 0.8),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            title: Row(
+              children: [
+                Icon(Icons.access_time_rounded, size: 18, color: copperColor),
+                const SizedBox(width: 8),
+                Text('Set Time', style: AppFonts.heading(context, size: 16)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Hour Field
+                    SizedBox(
+                      width: 65,
+                      child: TextField(
+                        controller: hourController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        style: AppFonts.mono(context, size: 22, weight: FontWeight.bold, color: t.text),
+                        maxLength: 2,
+                        decoration: InputDecoration(
+                          counterText: '',
+                          filled: true,
+                          fillColor: t.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: t.border, width: 0.8),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: t.border, width: 0.8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: copperColor, width: 1.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(':', style: AppFonts.mono(context, size: 22, weight: FontWeight.bold, color: t.textMuted)),
+                    ),
+                    // Minute Field
+                    SizedBox(
+                      width: 65,
+                      child: TextField(
+                        controller: minuteController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        style: AppFonts.mono(context, size: 22, weight: FontWeight.bold, color: t.text),
+                        maxLength: 2,
+                        decoration: InputDecoration(
+                          counterText: '',
+                          filled: true,
+                          fillColor: t.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: t.border, width: 0.8),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: t.border, width: 0.8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: copperColor, width: 1.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // AM / PM Toggle Pill
+                    InkWell(
+                      onTap: () {
+                        setDialogState(() {
+                          isAm = !isAm;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                        decoration: BoxDecoration(
+                          color: copperColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: copperColor.withOpacity(0.4), width: 0.8),
+                        ),
+                        child: Text(
+                          isAm ? 'AM' : 'PM',
+                          style: AppFonts.mono(context, size: 13, color: copperColor, weight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, null),
+                child: Text('Cancel', style: AppFonts.ui(context, color: t.textMuted)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: copperColor,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                onPressed: () {
+                  int parsedH = int.tryParse(hourController.text.trim()) ?? 12;
+                  int parsedM = int.tryParse(minuteController.text.trim()) ?? 0;
+                  parsedH = parsedH.clamp(1, 12);
+                  parsedM = parsedM.clamp(0, 59);
+
+                  int hour24 = parsedH;
+                  if (isAm) {
+                    if (parsedH == 12) hour24 = 0;
+                  } else {
+                    if (parsedH < 12) hour24 = parsedH + 12;
+                  }
+
+                  Navigator.pop(context, TimeOfDay(hour: hour24, minute: parsedM));
+                },
+                child: Text('Set Time', style: AppFonts.ui(context, color: Colors.white, weight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}

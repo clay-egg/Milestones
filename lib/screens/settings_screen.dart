@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../providers/state_providers.dart';
 import '../widgets/common_widgets.dart';
 import '../database/database.dart';
+import '../services/notification_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -18,6 +19,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _nameController = TextEditingController();
   bool _profileInitialized = false;
+  bool? _reminderEnabledState;
+  String? _reminderTimeState;
 
   @override
   void dispose() {
@@ -69,15 +72,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       _buildThemeSection(context, db, settings),
                       const SizedBox(height: 16),
 
-                      // 2. Profile & Motto Section
+                      // 2. Daily Reminders Section
+                      _buildNotificationSection(context, db, settings),
+                      const SizedBox(height: 16),
+
+                      // 3. Profile Section
                       _buildProfileSection(context, db, settings),
                       const SizedBox(height: 16),
 
-                      // 3. Category Management Section
+                      // 4. Category Management Section
                       _buildCategoriesSection(context, db, categoriesAsync),
                       const SizedBox(height: 16),
 
-                      // 4. Data Backup & Restore Section
+                      // 5. Data Backup & Restore Section
                       _buildDataBackupSection(context, db, settings),
                     ],
                   );
@@ -136,6 +143,317 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // --- DAILY REMINDER NOTIFICATIONS SECTION ---
+  Widget _buildNotificationSection(BuildContext context, AppDatabase db, UserSetting settings) {
+    final theme = ThemeProvider.of(context);
+    final sageColor = AppColors.getRoleColor('sage', theme.isDark);
+    final copperColor = AppColors.getRoleColor('copper', theme.isDark);
+
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        final isEnabled = _reminderEnabledState ?? settings.isReminderEnabled;
+        final currentTime = _reminderTimeState ?? settings.reminderTime;
+
+        final timeParts = currentTime.split(':');
+        final hour = timeParts.isNotEmpty ? int.tryParse(timeParts[0]) ?? 20 : 20;
+        final minute = timeParts.length > 1 ? int.tryParse(timeParts[1]) ?? 0 : 0;
+        final timeOfDay = TimeOfDay(hour: hour, minute: minute);
+        final formattedTime = timeOfDay.format(context);
+
+        final presetTimes = [
+          {'label': '8 AM', 'val': '08:00'},
+          {'label': '12 PM', 'val': '12:00'},
+          {'label': '6 PM', 'val': '18:00'},
+          {'label': '8 PM', 'val': '20:00'},
+          {'label': '10 PM', 'val': '22:00'},
+        ];
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: theme.border, width: 0.8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Daily Reminder', style: AppFonts.ui(context, size: 14, weight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          isEnabled ? 'Remind daily at $formattedTime' : 'Disabled',
+                          key: ValueKey('${isEnabled}_$formattedTime'),
+                          style: AppFonts.mono(context, size: 11, color: theme.textMuted),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: isEnabled,
+                    activeColor: sageColor,
+                    onChanged: (val) {
+                      setLocalState(() {
+                        _reminderEnabledState = val;
+                      });
+                      setState(() {
+                        _reminderEnabledState = val;
+                      });
+
+                      db.updateSettings(
+                        userName: settings.userName,
+                        isDarkMode: settings.isDarkMode,
+                        stagesJson: settings.stagesJson,
+                        isReminderEnabled: val,
+                        reminderTime: currentTime,
+                      ).then((_) => ref.refresh(settingsProvider));
+                    },
+                  ),
+                ],
+              ),
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 220),
+                crossFadeState: isEnabled ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                firstChild: Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: [
+                            ...presetTimes.map((pt) {
+                              final isSelected = currentTime == pt['val'];
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: InkWell(
+                                  onTap: () {
+                                    setLocalState(() {
+                                      _reminderTimeState = pt['val'];
+                                    });
+                                    setState(() {
+                                      _reminderTimeState = pt['val'];
+                                    });
+
+                                    db.updateSettings(
+                                      userName: settings.userName,
+                                      isDarkMode: settings.isDarkMode,
+                                      stagesJson: settings.stagesJson,
+                                      isReminderEnabled: true,
+                                      reminderTime: pt['val'],
+                                    ).then((_) => ref.refresh(settingsProvider));
+                                  },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? copperColor.withOpacity(0.18)
+                                          : (theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: isSelected ? copperColor : theme.border,
+                                        width: isSelected ? 1.2 : 0.8,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      pt['label']!,
+                                      style: AppFonts.mono(
+                                        context,
+                                        size: 11,
+                                        color: isSelected ? copperColor : theme.textMuted,
+                                        weight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showThemedTimePicker(
+                                  context: context,
+                                  initialTime: timeOfDay,
+                                );
+                                if (picked != null) {
+                                  final h = picked.hour.toString().padLeft(2, '0');
+                                  final m = picked.minute.toString().padLeft(2, '0');
+                                  final newTimeStr = '$h:$m';
+                                  setLocalState(() {
+                                    _reminderTimeState = newTimeStr;
+                                  });
+                                  setState(() {
+                                    _reminderTimeState = newTimeStr;
+                                  });
+
+                                  await db.updateSettings(
+                                    userName: settings.userName,
+                                    isDarkMode: settings.isDarkMode,
+                                    stagesJson: settings.stagesJson,
+                                    isReminderEnabled: true,
+                                    reminderTime: newTimeStr,
+                                  );
+                                  ref.refresh(settingsProvider);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: theme.border, width: 0.8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.access_time_rounded, size: 12, color: theme.textMuted),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Custom',
+                                      style: AppFonts.mono(context, size: 11, color: theme.textMuted),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: () async {
+                              final success = await NotificationService().showTestNotification();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.notifications_active_rounded, color: copperColor, size: 18),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            success
+                                                ? '🔔 Native Notification Sent! Check Notification Center.'
+                                                : '🔔 Daily Reminder: Time to log progress!',
+                                            style: AppFonts.ui(context, color: theme.text, weight: FontWeight.w600),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: theme.surface,
+                                    elevation: 6,
+                                    duration: const Duration(seconds: 4),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      side: BorderSide(color: copperColor, width: 1.2),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: copperColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: copperColor.withOpacity(0.3), width: 0.8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.notifications_none_rounded, size: 13, color: copperColor),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    'Test Now',
+                                    style: AppFonts.mono(context, size: 11, color: copperColor, weight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () async {
+                              await NotificationService().showScheduledNotification(seconds: 5);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.timer_rounded, color: copperColor, size: 18),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            '⏳ Scheduled in 5s! Go to Home Screen to watch banner pop up.',
+                                            style: AppFonts.ui(context, color: theme.text, weight: FontWeight.w600),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: theme.surface,
+                                    elevation: 6,
+                                    duration: const Duration(seconds: 5),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      side: BorderSide(color: copperColor, width: 1.2),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: theme.border, width: 0.8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.timer_outlined, size: 13, color: theme.textMuted),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    'Test 5s Delay',
+                                    style: AppFonts.mono(context, size: 11, color: theme.textMuted),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                secondChild: const SizedBox(width: double.infinity),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

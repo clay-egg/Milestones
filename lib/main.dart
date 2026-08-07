@@ -12,10 +12,12 @@ import 'screens/settings_screen.dart';
 import 'widgets/quick_capture.dart';
 
 import 'package:google_fonts/google_fonts.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = true;
+  await NotificationService().init();
   runApp(
     const ProviderScope(
       child: MilestoneApp(),
