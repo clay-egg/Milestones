@@ -73,7 +73,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 // 0. Personalized Greeting Banner
                 Text(
                   greetingText,
-                  style: AppFonts.heading(context, size: 20),
+                  style: AppFonts.heading(context, size: 18),
                 ),
                 const SizedBox(height: 16),
 

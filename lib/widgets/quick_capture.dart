@@ -425,17 +425,24 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
       }
 
       if (mounted) {
+        final theme = ThemeProvider.of(context);
+        final sageColor = AppColors.getRoleColor('sage', theme.isDark);
+
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               widget.existingEntry != null ? 'Entry updated!' : 'Entry saved!',
-              style: AppFonts.ui(context, color: Colors.white),
+              style: AppFonts.ui(context, color: theme.text, weight: FontWeight.w600),
             ),
-            backgroundColor: AppColors.getRoleColor('sage', ThemeProvider.of(context).isDark),
+            backgroundColor: theme.surface,
+            elevation: 4,
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: sageColor, width: 1.0),
+            ),
           ),
         );
       }

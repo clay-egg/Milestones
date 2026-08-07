@@ -504,12 +504,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Clipboard.setData(ClipboardData(text: jsonStr));
 
                     if (context.mounted) {
+                      final sageColor = AppColors.getRoleColor('sage', theme.isDark);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Full backup JSON copied to clipboard!', style: AppFonts.ui(context, color: Colors.white)),
-                          backgroundColor: AppColors.getRoleColor('sage', theme.isDark),
+                          content: Text('Full backup JSON copied to clipboard!', style: AppFonts.ui(context, color: theme.text, weight: FontWeight.w600)),
+                          backgroundColor: theme.surface,
+                          elevation: 4,
                           duration: const Duration(seconds: 3),
                           behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(color: sageColor, width: 1.0),
+                          ),
                         ),
                       );
                     }
@@ -604,13 +610,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ref.refresh(milestonesProvider);
 
                 if (context.mounted) {
+                  final roseColor = AppColors.getRoleColor('rose', theme.isDark);
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('All data cleared successfully.', style: AppFonts.ui(context, color: Colors.white)),
-                      backgroundColor: Colors.redAccent,
+                      content: Text('All data cleared successfully.', style: AppFonts.ui(context, color: theme.text, weight: FontWeight.w600)),
+                      backgroundColor: theme.surface,
+                      elevation: 4,
                       duration: const Duration(seconds: 3),
                       behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(color: roseColor, width: 1.0),
+                      ),
                     ),
                   );
                 }
@@ -872,21 +884,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Backup data successfully restored!', style: AppFonts.ui(context, color: Colors.white)),
-                        backgroundColor: sageColor,
+                        content: Text('Backup data successfully restored!', style: AppFonts.ui(context, color: theme.text, weight: FontWeight.w600)),
+                        backgroundColor: theme.surface,
+                        elevation: 4,
                         duration: const Duration(seconds: 3),
                         behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: sageColor, width: 1.0),
+                        ),
                       ),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
+                    final roseColor = AppColors.getRoleColor('rose', theme.isDark);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Invalid JSON backup format.', style: AppFonts.ui(context, color: Colors.white)),
-                        backgroundColor: Colors.redAccent,
+                        content: Text('Invalid JSON backup format.', style: AppFonts.ui(context, color: theme.text, weight: FontWeight.w600)),
+                        backgroundColor: theme.surface,
+                        elevation: 4,
                         duration: const Duration(seconds: 3),
                         behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: roseColor, width: 1.0),
+                        ),
                       ),
                     );
                   }
