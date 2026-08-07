@@ -45,12 +45,38 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             return matchesFocus && matchesMonth;
           }).toList();
 
+          final settingsAsync = ref.watch(settingsProvider);
+          final userName = settingsAsync.value?.userName ?? '';
+
+          final hour = DateTime.now().hour;
+          String greeting;
+          if (hour >= 5 && hour < 12) {
+            greeting = 'Good morning';
+          } else if (hour >= 12 && hour < 17) {
+            greeting = 'Good afternoon';
+          } else if (hour >= 17 && hour < 22) {
+            greeting = 'Good evening';
+          } else {
+            greeting = 'Good night';
+          }
+
+          final greetingText = (userName.isNotEmpty && userName.toLowerCase() != 'user')
+              ? '$greeting, $userName'
+              : greeting;
+
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 90),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 0. Personalized Greeting Banner
+                Text(
+                  greetingText,
+                  style: AppFonts.heading(context, size: 20),
+                ),
+                const SizedBox(height: 16),
+
                 // 1. Sleek Weekly Activity Bar Chart with Week Switcher
                 _buildWeeklyChartCard(context, allEntries, theme),
                 const SizedBox(height: 26),

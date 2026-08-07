@@ -40,7 +40,7 @@ class Entries extends Table {
   TextColumn get description => text()();
   IntColumn get categoryId => integer().references(Categories, #id)();
   TextColumn get project => text().nullable()();
-  TextColumn get tags => text()(); // kept for legacy, not shown in UI
+  TextColumn get tags => text().withDefault(const Constant(''))();
   TextColumn get notes => text().nullable()(); // optional user notes
 }
 
@@ -412,7 +412,7 @@ class AppDatabase extends _$AppDatabase {
   // 2. Settings CRUD
   Future<void> updateSettings({
     required String userName,
-    required String currentChapterGoal,
+    String? currentChapterGoal,
     required bool isDarkMode,
     required String stagesJson,
   }) async {
@@ -420,7 +420,7 @@ class AppDatabase extends _$AppDatabase {
     if (settingsList.isEmpty) {
       await into(userSettings).insert(UserSettingsCompanion.insert(
         userName: Value(userName),
-        currentChapterGoal: Value(currentChapterGoal),
+        currentChapterGoal: Value(currentChapterGoal ?? ''),
         isDarkMode: Value(isDarkMode),
         stagesJson: Value(stagesJson),
       ));
@@ -429,7 +429,7 @@ class AppDatabase extends _$AppDatabase {
       await (update(userSettings)..where((t) => t.id.equals(id))).write(
         UserSettingsCompanion(
           userName: Value(userName),
-          currentChapterGoal: Value(currentChapterGoal),
+          currentChapterGoal: currentChapterGoal != null ? Value(currentChapterGoal) : const Value.absent(),
           isDarkMode: Value(isDarkMode),
           stagesJson: Value(stagesJson),
         ),
