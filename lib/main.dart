@@ -12,10 +12,13 @@ import 'screens/settings_screen.dart';
 import 'widgets/quick_capture.dart';
 
 import 'package:google_fonts/google_fonts.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Suppress drift warning — AppDatabase is a singleton so there's only one connection
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   GoogleFonts.config.allowRuntimeFetching = true;
   await NotificationService().init();
 

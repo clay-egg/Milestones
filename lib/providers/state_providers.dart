@@ -3,9 +3,7 @@ import 'package:drift/drift.dart';
 import '../database/database.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(() => db.close());
-  return db;
+  return AppDatabase();
 });
 
 // Navigation Index Provider

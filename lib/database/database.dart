@@ -116,7 +116,10 @@ LazyDatabase _openConnection() {
   UserSettings
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  // Lazy singleton — only created on first access, after file system is ready
+  static AppDatabase? _instance;
+  factory AppDatabase() => _instance ??= AppDatabase._internal();
+  AppDatabase._internal() : super(_openConnection());
 
   @override
   int get schemaVersion => 2;

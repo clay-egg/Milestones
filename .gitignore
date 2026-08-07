@@ -96,3 +96,13 @@ app.*.map.json
 # Keep version config so teammates use the same Flutter version
 !.fvmrc
 !.fvm/fvm_config.json
+# ─── iOS / Xcode ──────────────────────────────────────────────────────────────
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.mobileprovision
+*.p8
+*.p12
+*.cer
+ios/Pods/
+ios/Podfile.lock
