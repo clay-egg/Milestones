@@ -67,7 +67,6 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
                         // Month & Year Picker Dropdown Menu
                         PopupMenuButton<String>(
-                          initialValue: _selectedMonthKey,
                           color: theme.surface,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -78,26 +77,45 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                             setState(() => _selectedMonthKey = val);
                           },
                           itemBuilder: (context) => [
-                            PopupMenuItem(
+                            PopupMenuItem<String>(
                               value: 'ALL',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.all_inclusive_rounded,
-                                    size: 14,
-                                    color: _selectedMonthKey == 'ALL' ? copperColor : theme.textMuted,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'All Time',
-                                    style: AppFonts.ui(
-                                      context,
-                                      size: 12,
-                                      color: _selectedMonthKey == 'ALL' ? copperColor : theme.text,
-                                      weight: _selectedMonthKey == 'ALL' ? FontWeight.bold : FontWeight.normal,
+                              height: 34,
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              child: Container(
+                                height: 32,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: _selectedMonthKey == 'ALL'
+                                      ? copperColor.withOpacity(0.12)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.all_inclusive_rounded,
+                                          size: 13,
+                                          color: _selectedMonthKey == 'ALL' ? copperColor : theme.textMuted,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'All Time',
+                                          style: AppFonts.mono(
+                                            context,
+                                            size: 11,
+                                            color: _selectedMonthKey == 'ALL' ? copperColor : theme.text,
+                                            weight: _selectedMonthKey == 'ALL' ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
+                                    if (_selectedMonthKey == 'ALL')
+                                      Icon(Icons.check_rounded, size: 13, color: copperColor),
+                                  ],
+                                ),
                               ),
                             ),
                             ...sortedMonthKeys.map((mKey) {
@@ -105,26 +123,43 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                               final monthLabel = DateFormat('MMMM yyyy').format(dateObj);
                               final isSel = _selectedMonthKey == mKey;
 
-                              return PopupMenuItem(
+                              return PopupMenuItem<String>(
                                 value: mKey,
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_month_rounded,
-                                      size: 14,
-                                      color: isSel ? copperColor : theme.textMuted,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      monthLabel,
-                                      style: AppFonts.ui(
-                                        context,
-                                        size: 12,
-                                        color: isSel ? copperColor : theme.text,
-                                        weight: isSel ? FontWeight.bold : FontWeight.normal,
+                                height: 34,
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                child: Container(
+                                  height: 32,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSel ? copperColor.withOpacity(0.12) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_month_rounded,
+                                            size: 13,
+                                            color: isSel ? copperColor : theme.textMuted,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            monthLabel,
+                                            style: AppFonts.mono(
+                                              context,
+                                              size: 11,
+                                              color: isSel ? copperColor : theme.text,
+                                              weight: isSel ? FontWeight.bold : FontWeight.normal,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                      if (isSel)
+                                        Icon(Icons.check_rounded, size: 13, color: copperColor),
+                                    ],
+                                  ),
                                 ),
                               );
                             }).toList(),

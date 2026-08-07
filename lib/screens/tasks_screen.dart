@@ -545,38 +545,119 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         }
                       }
                     },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'TODAY',
-                        child: Row(
-                          children: [
-                            Icon(Icons.today_rounded, size: 14, color: copperColor),
-                            const SizedBox(width: 8),
-                            Text('Today', style: AppFonts.ui(context, size: 12, color: theme.text)),
-                          ],
+                    itemBuilder: (context) {
+                      final isTodaySel = _filterDate != null && _isToday(_filterDate!);
+                      final isAllSel = _filterDate == null;
+                      final isPickSel = _filterDate != null && !_isToday(_filterDate!);
+
+                      return [
+                        PopupMenuItem<String>(
+                          value: 'TODAY',
+                          height: 34,
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          child: Container(
+                            height: 32,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: isTodaySel ? copperColor.withOpacity(0.12) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.today_rounded, size: 13, color: isTodaySel ? copperColor : theme.textMuted),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Today',
+                                      style: AppFonts.mono(
+                                        context,
+                                        size: 11,
+                                        color: isTodaySel ? copperColor : theme.text,
+                                        weight: isTodaySel ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (isTodaySel)
+                                  Icon(Icons.check_rounded, size: 13, color: copperColor),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'PICK',
-                        child: Row(
-                          children: [
-                            Icon(Icons.calendar_month_rounded, size: 14, color: theme.textMuted),
-                            const SizedBox(width: 8),
-                            Text('Pick Date...', style: AppFonts.ui(context, size: 12, color: theme.text)),
-                          ],
+                        PopupMenuItem<String>(
+                          value: 'PICK',
+                          height: 34,
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          child: Container(
+                            height: 32,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: isPickSel ? copperColor.withOpacity(0.12) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.calendar_month_rounded, size: 13, color: isPickSel ? copperColor : theme.textMuted),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Pick Date...',
+                                      style: AppFonts.mono(
+                                        context,
+                                        size: 11,
+                                        color: isPickSel ? copperColor : theme.text,
+                                        weight: isPickSel ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (isPickSel)
+                                  Icon(Icons.check_rounded, size: 13, color: copperColor),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'ALL',
-                        child: Row(
-                          children: [
-                            Icon(Icons.all_inbox_rounded, size: 14, color: theme.textMuted),
-                            const SizedBox(width: 8),
-                            Text('All Tasks', style: AppFonts.ui(context, size: 12, color: theme.text)),
-                          ],
+                        PopupMenuItem<String>(
+                          value: 'ALL',
+                          height: 34,
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          child: Container(
+                            height: 32,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: isAllSel ? copperColor.withOpacity(0.12) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.all_inbox_rounded, size: 13, color: isAllSel ? copperColor : theme.textMuted),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'All Tasks',
+                                      style: AppFonts.mono(
+                                        context,
+                                        size: 11,
+                                        color: isAllSel ? copperColor : theme.text,
+                                        weight: isAllSel ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (isAllSel)
+                                  Icon(Icons.check_rounded, size: 13, color: copperColor),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ];
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
