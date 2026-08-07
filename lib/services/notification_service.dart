@@ -174,4 +174,68 @@ class NotificationService {
   Future<void> cancelAll() async {
     await _notificationsPlugin.cancelAll();
   }
+
+  Future<bool> cancelDailyReminder() async {
+    try {
+      await _notificationsPlugin.cancel(2000);
+      debugPrint('[NotificationService] Daily reminder cancelled');
+      return true;
+    } catch (e) {
+      debugPrint('[NotificationService] ❌ Cancel error: $e');
+      return false;
+    }
+  }
+
+  /// Schedules (or reschedules) a daily repeating reminder at [hour]:[minute] LOCAL time.
+  /// Uses OS-level scheduling — fires every day even when the app is closed.
+  Future<bool> scheduleDailyReminder(int hour, int minute) async {
+    final initialized = await init();
+    if (!initialized) return false;
+
+    try {
+      await _notificationsPlugin.cancel(2000);
+
+      // Use DateTime.now() — always the true device local time
+      final now = DateTime.now();
+      var target = DateTime(now.year, now.month, now.day, hour, minute);
+
+      // If that time already passed today, schedule for tomorrow
+      if (target.isBefore(now)) {
+        target = target.add(const Duration(days: 1));
+      }
+
+      // Convert local time → UTC for the TZDateTime scheduler
+      final targetUtc = target.toUtc();
+      final scheduledTime = tz.TZDateTime.utc(
+        targetUtc.year,
+        targetUtc.month,
+        targetUtc.day,
+        targetUtc.hour,
+        targetUtc.minute,
+      );
+
+      final hStr = hour.toString().padLeft(2, '0');
+      final mStr = minute.toString().padLeft(2, '0');
+      debugPrint('[NotificationService] Daily reminder → local $hStr:$mStr → UTC $scheduledTime (repeating)');
+
+      await _notificationsPlugin.zonedSchedule(
+        2000,
+        'Milestones Daily Reminder 🎯',
+        'Time to log your daily progress and check off your tasks!',
+        scheduledTime,
+        _notificationDetails,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        // Repeat at same UTC clock time every day = same local time daily
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+
+      debugPrint('[NotificationService] ✅ Daily reminder set for $hStr:$mStr local time');
+      return true;
+    } catch (e, stack) {
+      debugPrint('[NotificationService] ❌ Daily reminder error: $e\n$stack');
+      return false;
+    }
+  }
 }

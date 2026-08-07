@@ -18,6 +18,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = true;
   await NotificationService().init();
+
+  // Restore daily reminder if it was previously enabled
+  final db = AppDatabase();
+  final settings = await db.getSettings();
+  if (settings != null && settings.isReminderEnabled) {
+    final parts = settings.reminderTime.split(':');
+    final h = int.tryParse(parts[0]) ?? 20;
+    final m = int.tryParse(parts[1]) ?? 0;
+    await NotificationService().scheduleDailyReminder(h, m);
+  }
+
   runApp(
     const ProviderScope(
       child: MilestoneApp(),

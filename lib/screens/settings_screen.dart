@@ -217,6 +217,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         isReminderEnabled: val,
                         reminderTime: currentTime,
                       ).then((_) => ref.refresh(settingsProvider));
+
+                      // Schedule or cancel the OS-level daily notification
+                      if (val) {
+                        final parts = currentTime.split(':');
+                        final h = int.tryParse(parts[0]) ?? 20;
+                        final m = int.tryParse(parts[1]) ?? 0;
+                        NotificationService().scheduleDailyReminder(h, m);
+                      } else {
+                        NotificationService().cancelDailyReminder();
+                      }
                     },
                   ),
                 ],
@@ -254,6 +264,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                       isReminderEnabled: true,
                                       reminderTime: pt['val'],
                                     ).then((_) => ref.refresh(settingsProvider));
+
+                                    // Reschedule daily reminder at new time
+                                    final parts = (pt['val'] ?? '20:00').split(':');
+                                    final h = int.tryParse(parts[0]) ?? 20;
+                                    final m = int.tryParse(parts[1]) ?? 0;
+                                    NotificationService().scheduleDailyReminder(h, m);
                                   },
                                   borderRadius: BorderRadius.circular(6),
                                   child: AnimatedContainer(
@@ -307,6 +323,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     reminderTime: newTimeStr,
                                   );
                                   ref.refresh(settingsProvider);
+
+                                  // Reschedule daily reminder at new custom time
+                                  NotificationService().scheduleDailyReminder(picked.hour, picked.minute);
                                 }
                               },
                               borderRadius: BorderRadius.circular(6),

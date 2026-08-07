@@ -422,6 +422,11 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // 2. Settings CRUD
+  Future<UserSetting?> getSettings() async {
+    final list = await select(userSettings).get();
+    return list.isEmpty ? null : list.first;
+  }
+
   Future<void> updateSettings({
     required String userName,
     String? currentChapterGoal,
