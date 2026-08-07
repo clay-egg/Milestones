@@ -37,6 +37,7 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
 
   int? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
+  bool _showCalendar = false;
 
   @override
   void initState() {
@@ -67,7 +68,9 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
 
     final formWidget = Form(
       key: _formKey,
-      child: Column(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -90,7 +93,11 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
                   IconButton(
                     icon: const Icon(Icons.close, size: 20),
                     color: theme.textMuted,
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -107,51 +114,18 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
                 style: AppFonts.ui(context, size: 12, color: theme.textMuted, weight: FontWeight.w600),
               ),
               InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                    builder: (context, child) {
-                      return Theme(
-                        data: Theme.of(context).copyWith(
-                          colorScheme: theme.isDark
-                              ? ColorScheme.dark(
-                                  primary: copperColor,
-                                  surface: theme.surface,
-                                )
-                              : ColorScheme.light(
-                                  primary: copperColor,
-                                  surface: theme.surface,
-                                ),
-                        ),
-                        child: child!,
-                      );
-                    },
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      // Preserve time of day if picking date
-                      final now = DateTime.now();
-                      _selectedDate = DateTime(
-                        picked.year,
-                        picked.month,
-                        picked.day,
-                        now.hour,
-                        now.minute,
-                        now.second,
-                      );
-                    });
-                  }
+                onTap: () {
+                  setState(() {
+                    _showCalendar = !_showCalendar;
+                  });
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: copperColor.withOpacity(0.1),
+                    color: _showCalendar ? copperColor.withOpacity(0.2) : copperColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: copperColor.withOpacity(0.3)),
+                    border: Border.all(color: copperColor.withOpacity(0.4)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -167,11 +141,44 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
                           weight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        _showCalendar ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                        size: 14,
+                        color: copperColor,
+                      ),
                     ],
                   ),
                 ),
               ),
             ],
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: InlineCalendarPicker(
+              initialDate: _selectedDate,
+              onClose: () {
+                setState(() {
+                  _showCalendar = false;
+                });
+              },
+              onDateSelected: (picked) {
+                setState(() {
+                  final now = DateTime.now();
+                  _selectedDate = DateTime(
+                    picked.year,
+                    picked.month,
+                    picked.day,
+                    now.hour,
+                    now.minute,
+                    now.second,
+                  );
+                  _showCalendar = false;
+                });
+              },
+            ),
+            crossFadeState: _showCalendar ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
           ),
           const SizedBox(height: 16),
 
@@ -348,7 +355,8 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
           ),
         ],
       ),
-    );
+    ),
+  );
 
     if (isDesktop) {
       return Dialog(

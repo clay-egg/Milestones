@@ -56,11 +56,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   }
 
   void _pickDate(BuildContext context) async {
-    final picked = await showDatePicker(
+    final picked = await showThemedDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
     );
     if (picked != null) {
       setState(() {
@@ -115,6 +113,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final titleController = TextEditingController(text: item.title);
     int selectedCatId = item.categoryId;
     DateTime editDate = item.dateCreated;
+    bool showInlineCalendar = false;
 
     showDialog(
       context: context,
@@ -172,23 +171,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   Row(
                     children: [
                       InkWell(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: ctx,
-                            initialDate: editDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2030),
-                          );
-                          if (picked != null) {
-                            setDialogState(() => editDate = picked);
-                          }
+                        onTap: () {
+                          setDialogState(() => showInlineCalendar = !showInlineCalendar);
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                           decoration: BoxDecoration(
-                            color: t.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+                            color: showInlineCalendar ? copperColor.withOpacity(0.2) : (t.isDark ? AppColors.darkSurface2 : AppColors.lightBg),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: t.border, width: 0.8),
+                            border: Border.all(color: showInlineCalendar ? copperColor : t.border, width: 0.8),
                           ),
                           child: Row(
                             children: [
@@ -198,11 +189,36 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                 DateFormat('MMM d, yyyy').format(editDate),
                                 style: AppFonts.mono(ctx, size: 10.5, color: t.text),
                               ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                showInlineCalendar ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                                size: 13,
+                                color: copperColor,
+                              ),
                             ],
                           ),
                         ),
                       ),
                     ],
+                  ),
+                  AnimatedCrossFade(
+                    firstChild: const SizedBox(width: double.infinity),
+                    secondChild: InlineCalendarPicker(
+                      initialDate: editDate,
+                      onClose: () {
+                        setDialogState(() {
+                          showInlineCalendar = false;
+                        });
+                      },
+                      onDateSelected: (picked) {
+                        setDialogState(() {
+                          editDate = picked;
+                          showInlineCalendar = false;
+                        });
+                      },
+                    ),
+                    crossFadeState: showInlineCalendar ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                    duration: const Duration(milliseconds: 200),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -496,8 +512,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     ],
                   ),
 
-                  // Date Filter Switcher Pill
+                  // Themed Date Filter Switcher Pill
                   PopupMenuButton<String>(
+                    color: theme.surface,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(color: theme.border, width: 0.8),
+                    ),
                     onSelected: (value) async {
                       if (value == 'TODAY') {
                         setState(() {
@@ -512,11 +534,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           _filterDate = null;
                         });
                       } else if (value == 'PICK') {
-                        final picked = await showDatePicker(
+                        final picked = await showThemedDatePicker(
                           context: context,
                           initialDate: _filterDate ?? DateTime.now(),
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2030),
                         );
                         if (picked != null) {
                           setState(() {
@@ -532,7 +552,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           children: [
                             Icon(Icons.today_rounded, size: 14, color: copperColor),
                             const SizedBox(width: 8),
-                            Text('Today', style: AppFonts.ui(context, size: 12)),
+                            Text('Today', style: AppFonts.ui(context, size: 12, color: theme.text)),
                           ],
                         ),
                       ),
@@ -542,7 +562,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           children: [
                             Icon(Icons.calendar_month_rounded, size: 14, color: theme.textMuted),
                             const SizedBox(width: 8),
-                            Text('Pick Date...', style: AppFonts.ui(context, size: 12)),
+                            Text('Pick Date...', style: AppFonts.ui(context, size: 12, color: theme.text)),
                           ],
                         ),
                       ),
@@ -552,7 +572,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           children: [
                             Icon(Icons.all_inbox_rounded, size: 14, color: theme.textMuted),
                             const SizedBox(width: 8),
-                            Text('All Tasks', style: AppFonts.ui(context, size: 12)),
+                            Text('All Tasks', style: AppFonts.ui(context, size: 12, color: theme.text)),
                           ],
                         ),
                       ),

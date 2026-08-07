@@ -69,7 +69,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                         PopupMenuButton<String>(
                           initialValue: _selectedMonthKey,
                           color: theme.surface,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(color: theme.border, width: 0.8),
+                          ),
                           onSelected: (val) {
                             setState(() => _selectedMonthKey = val);
                           },

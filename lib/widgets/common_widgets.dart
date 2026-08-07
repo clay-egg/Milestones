@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class AppColors {
   // Dark Theme
@@ -426,6 +427,482 @@ class RoleBadge extends StatelessWidget {
           color: color,
           weight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+// Global Minimalist Sleek Calendar Popup Helper with Smooth Animation
+Future<DateTime?> showThemedDatePicker({
+  required BuildContext context,
+  required DateTime initialDate,
+  DateTime? firstDate,
+  DateTime? lastDate,
+}) async {
+  return await showGeneralDialog<DateTime>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Calendar',
+    barrierColor: Colors.black.withOpacity(0.45),
+    transitionDuration: const Duration(milliseconds: 240),
+    pageBuilder: (ctx, anim1, anim2) => MinimalistCalendarDialog(initialDate: initialDate),
+    transitionBuilder: (ctx, anim1, anim2, child) {
+      final curvedAnim = CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic);
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.92, end: 1.0).animate(curvedAnim),
+        child: FadeTransition(
+          opacity: curvedAnim,
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+// Minimalist Sleek Calendar Dialog Widget
+class MinimalistCalendarDialog extends StatefulWidget {
+  final DateTime initialDate;
+
+  const MinimalistCalendarDialog({
+    Key? key,
+    required this.initialDate,
+  }) : super(key: key);
+
+  @override
+  State<MinimalistCalendarDialog> createState() => _MinimalistCalendarDialogState();
+}
+
+class _MinimalistCalendarDialogState extends State<MinimalistCalendarDialog> {
+  late DateTime _focusedMonth;
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day);
+    _focusedMonth = DateTime(widget.initialDate.year, widget.initialDate.month, 1);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = ThemeProvider.of(context);
+    final copperColor = AppColors.getRoleColor('copper', t.isDark);
+
+    final firstDayOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+    final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
+    final leadingPadding = (firstDayOfMonth.weekday - 1) % 7;
+
+    final monthLabel = DateFormat('MMMM yyyy').format(_focusedMonth).toUpperCase();
+    final weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+    return Dialog(
+      backgroundColor: t.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: t.border, width: 0.8),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: Container(
+        width: 310,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Month Header Nav (< AUGUST 2026 >)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: Text(
+                    monthLabel,
+                    key: ValueKey(monthLabel),
+                    style: AppFonts.mono(context, size: 11.5, color: t.text, weight: FontWeight.bold),
+                  ),
+                ),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(Icons.chevron_left_rounded, size: 18, color: t.textMuted),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(Icons.chevron_right_rounded, size: 18, color: t.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Weekday Headers (MO TU WE TH FR SA SU)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: weekdays.map((w) {
+                return SizedBox(
+                  width: 32,
+                  child: Center(
+                    child: Text(
+                      w,
+                      style: AppFonts.mono(context, size: 9.5, color: t.textMuted, weight: FontWeight.bold),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 8),
+
+            // Days Grid with AnimatedSwitcher for smooth month transitions
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: GridView.builder(
+                key: ValueKey('${_focusedMonth.year}-${_focusedMonth.month}'),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: leadingPadding + daysInMonth,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                ),
+                itemBuilder: (context, index) {
+                  if (index < leadingPadding) {
+                    return const SizedBox.shrink();
+                  }
+                  final dayNumber = index - leadingPadding + 1;
+                  final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayNumber);
+                  final isSelected = _isSameDay(date, _selectedDate);
+                  final isToday = _isSameDay(date, DateTime.now());
+
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? copperColor
+                            : (isToday ? copperColor.withOpacity(0.12) : Colors.transparent),
+                        borderRadius: BorderRadius.circular(6),
+                        border: isToday && !isSelected
+                            ? Border.all(color: copperColor.withOpacity(0.5), width: 0.8)
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$dayNumber',
+                          style: AppFonts.mono(
+                            context,
+                            size: 11.5,
+                            color: isSelected
+                                ? Colors.black
+                                : (isToday ? copperColor : t.text),
+                            weight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Bottom Actions Bar
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    final today = DateTime.now();
+                    setState(() {
+                      _selectedDate = DateTime(today.year, today.month, today.day);
+                      _focusedMonth = DateTime(today.year, today.month, 1);
+                    });
+                  },
+                  child: Text('Today', style: AppFonts.mono(context, size: 11, color: t.textMuted)),
+                ),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel', style: AppFonts.mono(context, size: 11, color: t.textMuted)),
+                    ),
+                    const SizedBox(width: 4),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: copperColor,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onPressed: () => Navigator.pop(context, _selectedDate),
+                      child: Text(
+                        'Select',
+                        style: AppFonts.mono(context, size: 11, color: Colors.black, weight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Inline Calendar Picker Widget (Used inside Bottom Sheets and Dialogs to avoid double popup layering)
+class InlineCalendarPicker extends StatefulWidget {
+  final DateTime initialDate;
+  final ValueChanged<DateTime> onDateSelected;
+  final VoidCallback? onClose;
+
+  const InlineCalendarPicker({
+    Key? key,
+    required this.initialDate,
+    required this.onDateSelected,
+    this.onClose,
+  }) : super(key: key);
+
+  @override
+  State<InlineCalendarPicker> createState() => _InlineCalendarPickerState();
+}
+
+class _InlineCalendarPickerState extends State<InlineCalendarPicker> {
+  late DateTime _focusedMonth;
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime(widget.initialDate.year, widget.initialDate.month, widget.initialDate.day);
+    _focusedMonth = DateTime(widget.initialDate.year, widget.initialDate.month, 1);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = ThemeProvider.of(context);
+    final copperColor = AppColors.getRoleColor('copper', t.isDark);
+
+    final firstDayOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+    final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
+    final leadingPadding = (firstDayOfMonth.weekday - 1) % 7;
+
+    final monthLabel = DateFormat('MMMM yyyy').format(_focusedMonth).toUpperCase();
+    final weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: t.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: t.border, width: 0.8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Month Header Nav (< AUGUST 2026 >)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 150),
+                child: Text(
+                  monthLabel,
+                  key: ValueKey(monthLabel),
+                  style: AppFonts.mono(context, size: 10.5, color: t.text, weight: FontWeight.bold),
+                ),
+              ),
+              Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(3.0),
+                      child: Icon(Icons.chevron_left_rounded, size: 16, color: t.textMuted),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(3.0),
+                      child: Icon(Icons.chevron_right_rounded, size: 16, color: t.textMuted),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Weekday Headers (MO TU WE TH FR SA SU)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: weekdays.map((w) {
+              return SizedBox(
+                width: 28,
+                child: Center(
+                  child: Text(
+                    w,
+                    style: AppFonts.mono(context, size: 8.5, color: t.textMuted, weight: FontWeight.bold),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 6),
+
+          // Days Grid
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: GridView.builder(
+              key: ValueKey('${_focusedMonth.year}-${_focusedMonth.month}'),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: leadingPadding + daysInMonth,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisSpacing: 3,
+                crossAxisSpacing: 3,
+              ),
+              itemBuilder: (context, index) {
+                if (index < leadingPadding) {
+                  return const SizedBox.shrink();
+                }
+                final dayNumber = index - leadingPadding + 1;
+                final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayNumber);
+                final isSelected = _isSameDay(date, _selectedDate);
+                final isToday = _isSameDay(date, DateTime.now());
+
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedDate = date;
+                    });
+                    widget.onDateSelected(date);
+                  },
+                  borderRadius: BorderRadius.circular(4),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 120),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? copperColor
+                          : (isToday ? copperColor.withOpacity(0.12) : Colors.transparent),
+                      borderRadius: BorderRadius.circular(5),
+                      border: isToday && !isSelected
+                          ? Border.all(color: copperColor.withOpacity(0.5), width: 0.8)
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$dayNumber',
+                        style: AppFonts.mono(
+                          context,
+                          size: 10.5,
+                          color: isSelected
+                              ? Colors.black
+                              : (isToday ? copperColor : t.text),
+                          weight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Bottom Action Row (Today + Hide Calendar)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              InkWell(
+                onTap: () {
+                  final today = DateTime.now();
+                  setState(() {
+                    _selectedDate = DateTime(today.year, today.month, today.day);
+                    _focusedMonth = DateTime(today.year, today.month, 1);
+                  });
+                  widget.onDateSelected(_selectedDate);
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text('Today', style: AppFonts.mono(context, size: 10, color: t.textMuted, weight: FontWeight.bold)),
+                ),
+              ),
+              if (widget.onClose != null)
+                InkWell(
+                  onTap: widget.onClose,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: t.border.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.keyboard_arrow_up_rounded, size: 12, color: t.textMuted),
+                        const SizedBox(width: 2),
+                        Text('Hide Calendar', style: AppFonts.mono(context, size: 10, color: t.textMuted)),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
