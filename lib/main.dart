@@ -95,7 +95,6 @@ class AppShell extends ConsumerWidget {
       TasksScreen(),
       RecapScreen(),
       FocusScreen(),
-      AchievementsScreen(),
       SettingsScreen(),
     ];
 
@@ -104,7 +103,6 @@ class AppShell extends ConsumerWidget {
       Icons.check_box_outlined,
       Icons.auto_graph_rounded,
       Icons.center_focus_strong_rounded,
-      Icons.military_tech_rounded,
       Icons.tune_rounded,
     ];
     final pageSubtitles = const [
@@ -112,7 +110,6 @@ class AppShell extends ConsumerWidget {
       'To-Do',
       'Recap & Insights',
       'Focus',
-      'Wins & Streaks',
       'Settings',
     ];
 
@@ -253,10 +250,6 @@ class AppShell extends ConsumerWidget {
               label: 'Focus',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.military_tech_rounded),
-              label: 'Wins',
-            ),
-            BottomNavigationBarItem(
               icon: Icon(Icons.tune_rounded),
               label: 'Settings',
             ),
@@ -383,17 +376,10 @@ class AppShell extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
               SidebarNavItem(
-                label: 'Wins & Streaks',
-                icon: Icons.military_tech_rounded,
-                isSelected: activeIndex == 4,
-                onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
-              ),
-              const SizedBox(height: 6),
-              SidebarNavItem(
                 label: 'Settings',
                 icon: Icons.tune_rounded,
-                isSelected: activeIndex == 5,
-                onTap: () => ref.read(navigationIndexProvider.notifier).state = 5,
+                isSelected: activeIndex == 4,
+                onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
               ),
               
               const Spacer(),

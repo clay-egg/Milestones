@@ -183,6 +183,17 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
       return isGold || hasWinKeyword;
     }).toList();
 
+    // Calculate Active Days this month
+    final now = DateTime.now();
+    final currentMonthStart = DateTime(now.year, now.month, 1);
+    final Set<String> activeMonthDays = {};
+    for (final e in entries) {
+      if (e.entry.date.isAfter(currentMonthStart.subtract(const Duration(seconds: 1)))) {
+        activeMonthDays.add(DateFormat('yyyy-MM-dd').format(e.entry.date));
+      }
+    }
+    final activeDaysThisMonth = activeMonthDays.length;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
@@ -217,7 +228,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 2. Pure Minimalist Numbers Banner (Zero Emojis)
+              // 2. Pure Minimalist Numbers Banner
               Row(
                 children: [
                   Expanded(
@@ -257,12 +268,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${winEntries.length}',
+                            '$activeDaysThisMonth',
                             style: AppFonts.mono(context, size: 26, color: goldColor, weight: FontWeight.bold),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'WINS LOGGED',
+                            'ACTIVE DAYS THIS MONTH',
                             style: AppFonts.mono(context, size: 9.5, color: theme.textMuted, weight: FontWeight.w600),
                           ),
                         ],
@@ -273,13 +284,13 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
               ),
               const SizedBox(height: 22),
 
-              // 3. Clean Wins List / Grid
+              // 3. Clean Wins Timeline Feed
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Wins', style: AppFonts.heading(context, size: 15)),
+                  Text('Wins Feed', style: AppFonts.heading(context, size: 15)),
                   Text(
-                    '${winEntries.length} TOTAL',
+                    '${winEntries.length} TOTAL WINS',
                     style: AppFonts.mono(context, size: 9.5, color: theme.textMuted, weight: FontWeight.bold),
                   ),
                 ],
@@ -302,60 +313,55 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                   ),
                 )
               else
-                GridView.builder(
+                ListView.separated(
                   padding: EdgeInsets.zero,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 260,
-                    mainAxisExtent: 90,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
                   itemCount: winEntries.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final item = winEntries[index];
                     final catColor = AppColors.getRoleColor(item.category.role, theme.isDark);
 
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: theme.surface,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: catColor.withValues(alpha: 0.3), width: 0.8),
+                        border: Border.all(color: theme.border, width: 0.8),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: catColor.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  item.category.name.toUpperCase(),
-                                  style: AppFonts.mono(context, size: 8.5, color: catColor, weight: FontWeight.bold),
-                                ),
-                              ),
-                              Text(
-                                DateFormat('MMM d, yyyy').format(item.entry.date).toUpperCase(),
-                                style: AppFonts.mono(context, size: 8.5, color: theme.textMuted),
-                              ),
-                            ],
+                          // Date Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: theme.isDark ? AppColors.darkSurface2 : AppColors.lightBg,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: theme.border, width: 0.6),
+                            ),
+                            child: Text(
+                              DateFormat('MMM d').format(item.entry.date).toUpperCase(),
+                              style: AppFonts.mono(context, size: 9, color: theme.textMuted, weight: FontWeight.bold),
+                            ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(width: 12),
+
+                          // Win Description
                           Expanded(
                             child: Text(
                               item.entry.description,
-                              style: AppFonts.ui(context, size: 13, weight: FontWeight.w600),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.ui(context, size: 13, color: theme.text, weight: FontWeight.w500),
                             ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Category Badge
+                          RoleBadge(
+                            text: item.category.name,
+                            role: item.category.role,
+                            isSmall: true,
                           ),
                         ],
                       ),
