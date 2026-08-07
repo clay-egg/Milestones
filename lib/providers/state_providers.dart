@@ -85,3 +85,10 @@ final summariesProvider = StreamProvider<List<Summarie>>((ref) {
   query.orderBy([(t) => OrderingTerm.desc(t.dateCreated)]);
   return query.watch();
 });
+
+// Todos Provider
+final todosProvider = FutureProvider<List<TodoItem>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.getTodos();
+});
+

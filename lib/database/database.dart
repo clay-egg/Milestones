@@ -7,6 +7,26 @@ import 'package:path/path.dart' as p;
 
 part 'database.g.dart';
 
+class TodoItem {
+  final int id;
+  final String title;
+  final bool isCompleted;
+  final int categoryId;
+  final DateTime dateCreated;
+  final DateTime? dateCompleted;
+  final int? linkedEntryId;
+
+  TodoItem({
+    required this.id,
+    required this.title,
+    required this.isCompleted,
+    required this.categoryId,
+    required this.dateCreated,
+    this.dateCompleted,
+    this.linkedEntryId,
+  });
+}
+
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
@@ -236,13 +256,114 @@ class AppDatabase extends _$AppDatabase {
           } catch (_) {
             // Already exists
           }
+          try {
+            await customStatement('''
+              CREATE TABLE IF NOT EXISTS todos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                is_completed INTEGER NOT NULL DEFAULT 0,
+                category_id INTEGER NOT NULL,
+                date_created TEXT NOT NULL,
+                date_completed TEXT,
+                linked_entry_id INTEGER
+              );
+            ''');
+          } catch (_) {
+            // Already exists
+          }
+          try {
+            await customStatement('ALTER TABLE todos ADD COLUMN linked_entry_id INTEGER;');
+          } catch (_) {
+            // Already exists
+          }
         },
       );
+
+  // Todo CRUD & Auto-Log
+  Future<List<TodoItem>> getTodos() async {
+    final rows = await customSelect(
+      'SELECT id, title, is_completed, category_id, date_created, date_completed, linked_entry_id FROM todos ORDER BY is_completed ASC, id DESC',
+    ).get();
+
+    return rows.map((r) {
+      return TodoItem(
+        id: r.read<int>('id'),
+        title: r.read<String>('title'),
+        isCompleted: r.read<int>('is_completed') == 1,
+        categoryId: r.read<int>('category_id'),
+        dateCreated: DateTime.tryParse(r.read<String>('date_created')) ?? DateTime.now(),
+        dateCompleted: r.read<String?>('date_completed') != null
+            ? DateTime.tryParse(r.read<String>('date_completed'))
+            : null,
+        linkedEntryId: r.read<int?>('linked_entry_id'),
+      );
+    }).toList();
+  }
+
+  Future<void> addTodo(String title, int categoryId, {DateTime? dateCreated}) async {
+    final dateStr = (dateCreated ?? DateTime.now()).toIso8601String();
+    await customStatement(
+      'INSERT INTO todos (title, is_completed, category_id, date_created) VALUES (?, 0, ?, ?)',
+      [title, categoryId, dateStr],
+    );
+  }
+
+  Future<void> toggleTodo(TodoItem item) async {
+    final newCompleted = !item.isCompleted;
+    final now = DateTime.now();
+    final nowStr = now.toIso8601String();
+
+    if (newCompleted) {
+      final entryId = await saveQuickCapture(
+        description: item.title,
+        categoryId: item.categoryId,
+        date: item.dateCreated,
+      );
+
+      await customStatement(
+        'UPDATE todos SET is_completed = 1, date_completed = ?, linked_entry_id = ? WHERE id = ?',
+        [nowStr, entryId, item.id],
+      );
+    } else {
+      if (item.linkedEntryId != null) {
+        await (delete(entries)..where((e) => e.id.equals(item.linkedEntryId!))).go();
+      }
+
+      await customStatement(
+        'UPDATE todos SET is_completed = 0, date_completed = NULL, linked_entry_id = NULL WHERE id = ?',
+        [item.id],
+      );
+    }
+  }
+
+  Future<void> updateTodo(TodoItem item, {required String title, required int categoryId, required DateTime dateCreated}) async {
+    final dateStr = dateCreated.toIso8601String();
+    await customStatement(
+      'UPDATE todos SET title = ?, category_id = ?, date_created = ? WHERE id = ?',
+      [title, categoryId, dateStr, item.id],
+    );
+
+    if (item.linkedEntryId != null) {
+      await updateEntry(
+        item.linkedEntryId!,
+        description: title,
+        categoryId: categoryId,
+        date: dateCreated,
+      );
+    }
+  }
+
+  Future<void> deleteTodo(TodoItem item) async {
+    if (item.linkedEntryId != null) {
+      await (delete(entries)..where((e) => e.id.equals(item.linkedEntryId!))).go();
+    }
+    await customStatement('DELETE FROM todos WHERE id = ?', [item.id]);
+  }
 
   // Helper CRUD actions
   
   // 1. Save Timeline Entry
-  Future<void> saveQuickCapture({
+  Future<int> saveQuickCapture({
     required String description,
     required int categoryId,
     String? notes,
@@ -262,7 +383,7 @@ class AppDatabase extends _$AppDatabase {
       }
     }
 
-    await into(entries).insert(EntriesCompanion.insert(
+    return await into(entries).insert(EntriesCompanion.insert(
       date: date ?? DateTime.now(),
       description: description,
       categoryId: validCatId,

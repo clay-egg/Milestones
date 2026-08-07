@@ -4,6 +4,7 @@ import 'database/database.dart';
 import 'providers/state_providers.dart';
 import 'widgets/common_widgets.dart';
 import 'screens/timeline_screen.dart';
+import 'screens/tasks_screen.dart';
 import 'screens/focus_screen.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/settings_screen.dart';
@@ -79,6 +80,7 @@ class AppShell extends ConsumerWidget {
 
     final List<Widget> pages = const [
       TimelineScreen(),
+      TasksScreen(),
       FocusScreen(),
       AchievementsScreen(),
       SettingsScreen(),
@@ -86,12 +88,14 @@ class AppShell extends ConsumerWidget {
 
     final pageIcons = const [
       Icons.history_rounded,
+      Icons.check_box_outlined,
       Icons.center_focus_strong_rounded,
       Icons.military_tech_rounded,
       Icons.tune_rounded,
     ];
     final pageSubtitles = const [
       'Timeline',
+      'To-Do',
       'Focus',
       'Wins & Streaks',
       'Settings',
@@ -104,41 +108,41 @@ class AppShell extends ConsumerWidget {
           builder: (context, constraints) {
             final isWide = constraints.maxWidth > 880;
 
-          if (isWide) {
-            return Row(
-              children: [
-                // Wide Mode: Sidebar Navigation
-                _buildSidebar(context, ref, activeIndex, settingsAsync),
-                
-                // Hairline divider
-                Container(
-                  width: 1,
-                  color: theme.border,
-                ),
-                
-                // Content Pane
-                Expanded(
-                  child: SafeArea(
+            if (isWide) {
+              return Row(
+                children: [
+                  // Wide Mode: Sidebar Navigation
+                  _buildSidebar(context, ref, activeIndex, settingsAsync),
+                  
+                  // Hairline divider
+                  Container(
+                    width: 1,
+                    color: theme.border,
+                  ),
+                  
+                  // Content Pane
+                  Expanded(
+                    child: SafeArea(
+                      child: pages[activeIndex],
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              // Narrow Mode: Top Bar + Bottom Navigation
+              return Column(
+                children: [
+                  _buildTopBar(context, pageSubtitles[activeIndex], pageIcons[activeIndex]),
+                  Container(height: 0.5, color: theme.border),
+                  Expanded(
                     child: pages[activeIndex],
                   ),
-                ),
-              ],
-            );
-          } else {
-            // Narrow Mode: Top Bar + Bottom Navigation
-            return Column(
-              children: [
-                _buildTopBar(context, pageSubtitles[activeIndex], pageIcons[activeIndex]),
-                Container(height: 0.5, color: theme.border),
-                Expanded(
-                  child: pages[activeIndex],
-                ),
-              ],
-            );
-          }
-        },
+                ],
+              );
+            }
+          },
+        ),
       ),
-     ),
       bottomNavigationBar: MediaQuery.of(context).size.width <= 880
           ? _buildBottomNavBar(context, ref, activeIndex)
           : null,
@@ -155,43 +159,41 @@ class AppShell extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-            // App brand mark
-            Row(
-              children: [
-                // Copper gem icon
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: copperColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: copperColor.withOpacity(0.3), width: 1),
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: copperColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: copperColor.withValues(alpha: 0.3), width: 1),
+                ),
+                child: Icon(Icons.timeline_rounded, size: 18, color: copperColor),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Milestones',
+                    style: AppFonts.heading(context, size: 17),
                   ),
-                  child: Icon(Icons.timeline_rounded, size: 18, color: copperColor),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Milestones',
-                      style: AppFonts.heading(context, size: 17),
-                    ),
-                    Row(
-                      children: [
-                        Icon(pageIcon, size: 10, color: copperColor),
-                        const SizedBox(width: 3),
-                        Text(
-                          subtitle,
-                          style: AppFonts.mono(context, size: 9, color: copperColor),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  Row(
+                    children: [
+                      Icon(pageIcon, size: 10, color: copperColor),
+                      const SizedBox(width: 3),
+                      Text(
+                        subtitle,
+                        style: AppFonts.mono(context, size: 9, color: copperColor),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -224,6 +226,10 @@ class AppShell extends ConsumerWidget {
               label: 'Timeline',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.check_box_outlined),
+              label: 'To-Do',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.center_focus_strong_rounded),
               label: 'Focus',
             ),
@@ -254,10 +260,9 @@ class AppShell extends ConsumerWidget {
     final theme = ThemeProvider.of(context);
     final settings = settingsAsync.value;
     final userName = settings?.userName ?? 'Explorer';
-    final goalText = settings?.currentChapterGoal ?? '';
 
     return Container(
-      width: 250,
+      width: 240,
       color: theme.surface,
       child: SafeArea(
         right: false,
@@ -267,17 +272,16 @@ class AppShell extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // App name branding at top of sidebar
               Row(
                 children: [
                   Container(
                     width: 30,
                     height: 30,
                     decoration: BoxDecoration(
-                      color: AppColors.getRoleColor('copper', theme.isDark).withOpacity(0.15),
+                      color: AppColors.getRoleColor('copper', theme.isDark).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(7),
                       border: Border.all(
-                        color: AppColors.getRoleColor('copper', theme.isDark).withOpacity(0.3),
+                        color: AppColors.getRoleColor('copper', theme.isDark).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -295,126 +299,107 @@ class AppShell extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              // User profile heading
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.getRoleColor('copper', theme.isDark).withOpacity(0.2),
-                child: Text(
-                  userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                  style: AppFonts.heading(
-                    context,
-                    size: 16,
-                    color: AppColors.getRoleColor('copper', theme.isDark),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName,
-                      style: AppFonts.heading(context, size: 16),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      'Personal Growth',
-                      style: AppFonts.mono(context, size: 10, color: theme.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Chapter Goal Card
-          if (goalText.trim().isNotEmpty) ...[
-            MilestoneCard(
-              role: 'plum',
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  Text(
-                    'CURRENT CHAPTER',
-                    style: AppFonts.mono(context, size: 9, color: AppColors.getRoleColor('plum', theme.isDark), weight: FontWeight.bold),
+                  CircleAvatar(
+                    backgroundColor: AppColors.getRoleColor('copper', theme.isDark).withValues(alpha: 0.2),
+                    child: Text(
+                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                      style: AppFonts.heading(
+                        context,
+                        size: 16,
+                        color: AppColors.getRoleColor('copper', theme.isDark),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    goalText,
-                    style: AppFonts.ui(context, size: 12, color: theme.text),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          style: AppFonts.heading(context, size: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Personal Growth',
+                          style: AppFonts.mono(context, size: 9.5, color: theme.textMuted),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
-          
-          // Navigation Menu Options
-          SidebarNavItem(
-            label: 'Timeline',
-            icon: Icons.history_rounded,
-            isSelected: activeIndex == 0,
-            onTap: () => ref.read(navigationIndexProvider.notifier).state = 0,
-          ),
-          const SizedBox(height: 8),
-          SidebarNavItem(
-            label: 'Focus Area',
-            icon: Icons.center_focus_strong_rounded,
-            isSelected: activeIndex == 1,
-            onTap: () => ref.read(navigationIndexProvider.notifier).state = 1,
-          ),
-          const SizedBox(height: 8),
-          SidebarNavItem(
-            label: 'Wins & Streaks',
-            icon: Icons.military_tech_rounded,
-            isSelected: activeIndex == 2,
-            onTap: () => ref.read(navigationIndexProvider.notifier).state = 2,
-          ),
-          const SizedBox(height: 8),
-          SidebarNavItem(
-            label: 'Settings',
-            icon: Icons.tune_rounded,
-            isSelected: activeIndex == 3,
-            onTap: () => ref.read(navigationIndexProvider.notifier).state = 3,
-          ),
-          
-          const Spacer(),
-          
-          // Quick Capture Shortcut Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: theme.border),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              const SizedBox(height: 24),
+              
+              // Navigation Menu Options
+              SidebarNavItem(
+                label: 'Timeline',
+                icon: Icons.history_rounded,
+                isSelected: activeIndex == 0,
+                onTap: () => ref.read(navigationIndexProvider.notifier).state = 0,
               ),
-              onPressed: () => QuickCapture.show(context),
-              icon: Icon(Icons.flash_on, size: 18, color: AppColors.getRoleColor('copper', theme.isDark)),
-              label: Text(
-                'Quick Capture',
-                style: AppFonts.ui(context, size: 13, color: theme.text, weight: FontWeight.bold),
+              const SizedBox(height: 6),
+              SidebarNavItem(
+                label: 'To-Do',
+                icon: Icons.check_box_outlined,
+                isSelected: activeIndex == 1,
+                onTap: () => ref.read(navigationIndexProvider.notifier).state = 1,
               ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          
-          // Shortcuts note
-          Center(
-            child: Text(
-              'Press FAB/Shortcut to capture',
-              style: AppFonts.mono(context, size: 9, color: theme.textMuted),
-            ),
-          ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
+              SidebarNavItem(
+                label: 'Focus Area',
+                icon: Icons.center_focus_strong_rounded,
+                isSelected: activeIndex == 2,
+                onTap: () => ref.read(navigationIndexProvider.notifier).state = 2,
+              ),
+              const SizedBox(height: 6),
+              SidebarNavItem(
+                label: 'Wins & Streaks',
+                icon: Icons.military_tech_rounded,
+                isSelected: activeIndex == 3,
+                onTap: () => ref.read(navigationIndexProvider.notifier).state = 3,
+              ),
+              const SizedBox(height: 6),
+              SidebarNavItem(
+                label: 'Settings',
+                icon: Icons.tune_rounded,
+                isSelected: activeIndex == 4,
+                onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
+              ),
+              
+              const Spacer(),
+              
+              // Quick Capture Trigger Button
+              GestureDetector(
+                onTap: () => QuickCapture.show(context),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.getRoleColor('copper', theme.isDark),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_rounded, size: 18, color: Colors.black),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Quick Log',
+                        style: AppFonts.ui(
+                          context,
+                          size: 13,
+                          color: Colors.black,
+                          weight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
