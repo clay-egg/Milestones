@@ -8,6 +8,9 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
+// Navigation Index Provider
+final navigationIndexProvider = StateProvider<int>((ref) => 0);
+
 // Settings Provider
 final settingsProvider = StreamProvider<UserSetting>((ref) {
   final db = ref.watch(databaseProvider);

@@ -5,6 +5,7 @@ import 'providers/state_providers.dart';
 import 'widgets/common_widgets.dart';
 import 'screens/timeline_screen.dart';
 import 'screens/tasks_screen.dart';
+import 'screens/recap_screen.dart';
 import 'screens/focus_screen.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/settings_screen.dart';
@@ -80,9 +81,6 @@ class MilestoneApp extends ConsumerWidget {
   }
 }
 
-// Navigation index provider
-final navigationIndexProvider = StateProvider<int>((ref) => 0);
-
 class AppShell extends ConsumerWidget {
   const AppShell({Key? key}) : super(key: key);
 
@@ -95,6 +93,7 @@ class AppShell extends ConsumerWidget {
     final List<Widget> pages = const [
       TimelineScreen(),
       TasksScreen(),
+      RecapScreen(),
       FocusScreen(),
       AchievementsScreen(),
       SettingsScreen(),
@@ -103,6 +102,7 @@ class AppShell extends ConsumerWidget {
     final pageIcons = const [
       Icons.history_rounded,
       Icons.check_box_outlined,
+      Icons.auto_graph_rounded,
       Icons.center_focus_strong_rounded,
       Icons.military_tech_rounded,
       Icons.tune_rounded,
@@ -110,6 +110,7 @@ class AppShell extends ConsumerWidget {
     final pageSubtitles = const [
       'Timeline',
       'To-Do',
+      'Recap & Insights',
       'Focus',
       'Wins & Streaks',
       'Settings',
@@ -244,6 +245,10 @@ class AppShell extends ConsumerWidget {
               label: 'To-Do',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.auto_graph_rounded),
+              label: 'Recap',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.center_focus_strong_rounded),
               label: 'Focus',
             ),
@@ -364,24 +369,31 @@ class AppShell extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
               SidebarNavItem(
-                label: 'Focus Area',
-                icon: Icons.center_focus_strong_rounded,
+                label: 'Recap & Insights',
+                icon: Icons.auto_graph_rounded,
                 isSelected: activeIndex == 2,
                 onTap: () => ref.read(navigationIndexProvider.notifier).state = 2,
               ),
               const SizedBox(height: 6),
               SidebarNavItem(
-                label: 'Wins & Streaks',
-                icon: Icons.military_tech_rounded,
+                label: 'Focus Area',
+                icon: Icons.center_focus_strong_rounded,
                 isSelected: activeIndex == 3,
                 onTap: () => ref.read(navigationIndexProvider.notifier).state = 3,
               ),
               const SizedBox(height: 6),
               SidebarNavItem(
-                label: 'Settings',
-                icon: Icons.tune_rounded,
+                label: 'Wins & Streaks',
+                icon: Icons.military_tech_rounded,
                 isSelected: activeIndex == 4,
                 onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
+              ),
+              const SizedBox(height: 6),
+              SidebarNavItem(
+                label: 'Settings',
+                icon: Icons.tune_rounded,
+                isSelected: activeIndex == 5,
+                onTap: () => ref.read(navigationIndexProvider.notifier).state = 5,
               ),
               
               const Spacer(),

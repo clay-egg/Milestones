@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/state_providers.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/quick_capture.dart';
+import '../widgets/recap_modal.dart';
 import '../database/database.dart';
 import 'package:intl/intl.dart';
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/state_providers.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/recap_modal.dart';
 import '../database/database.dart';
 import 'package:intl/intl.dart';
 
@@ -208,12 +209,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       ),
                       child: Text(
                         '+ Log Win',
-                        style: AppFonts.mono(
-                          context,
-                          size: 11,
-                          color: goldColor,
-                          weight: FontWeight.bold,
-                        ),
+                        style: AppFonts.mono(context, size: 10.5, color: goldColor, weight: FontWeight.bold),
                       ),
                     ),
                   ),
