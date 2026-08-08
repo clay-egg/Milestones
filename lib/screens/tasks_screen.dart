@@ -251,6 +251,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   ),
                 ],
               ),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
                 TextButton(
                   onPressed: () {
@@ -262,31 +264,37 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     style: AppFonts.ui(ctx, size: 12, color: roseColor, weight: FontWeight.bold),
                   ),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text('Cancel', style: AppFonts.ui(ctx, size: 12, color: t.textMuted)),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: copperColor,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ),
-                  onPressed: () async {
-                    final newTitle = titleController.text.trim();
-                    if (newTitle.isNotEmpty) {
-                      await db.updateTodo(
-                        item,
-                        title: newTitle,
-                        categoryId: selectedCatId,
-                        dateCreated: editDate,
-                      );
-                      ref.refresh(todosProvider);
-                      ref.refresh(timelineEntriesProvider);
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    }
-                  },
-                  child: Text('Save', style: AppFonts.ui(ctx, size: 12, color: Colors.black, weight: FontWeight.bold)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text('Cancel', style: AppFonts.ui(ctx, size: 12, color: t.textMuted)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: copperColor,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      ),
+                      onPressed: () async {
+                        final newTitle = titleController.text.trim();
+                        if (newTitle.isNotEmpty) {
+                          await db.updateTodo(
+                            item,
+                            title: newTitle,
+                            categoryId: selectedCatId,
+                            dateCreated: editDate,
+                          );
+                          ref.refresh(todosProvider);
+                          ref.refresh(timelineEntriesProvider);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        }
+                      },
+                      child: Text('Save', style: AppFonts.ui(ctx, size: 12, color: Colors.black, weight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
               ],
             );

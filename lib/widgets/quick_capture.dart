@@ -480,7 +480,9 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
             ),
             TextButton(
               onPressed: () async {
-                await (db.delete(db.entries)..where((e) => e.id.equals(entry.id))).go();
+                await db.deleteEntry(entry.id);
+                ref.refresh(todosProvider);
+                ref.refresh(timelineEntriesProvider);
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (context.mounted) Navigator.pop(context);
               },

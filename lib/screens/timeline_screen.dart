@@ -964,7 +964,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             ),
             TextButton(
               onPressed: () async {
-                await (db.delete(db.entries)..where((e) => e.id.equals(entry.id))).go();
+                await db.deleteEntry(entry.id);
+                ref.refresh(todosProvider);
+                ref.refresh(timelineEntriesProvider);
                 if (ctx.mounted) Navigator.pop(ctx);
               },
               child: Text('Delete', style: AppFonts.ui(ctx, color: roseColor, weight: FontWeight.bold)),

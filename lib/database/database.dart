@@ -424,6 +424,13 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> deleteEntry(int entryId) async {
+    // Delete linked todo list item if one exists
+    await customStatement('DELETE FROM todos WHERE linked_entry_id = ?', [entryId]);
+    // Delete the entry from entries table
+    await (delete(entries)..where((e) => e.id.equals(entryId))).go();
+  }
+
   // 2. Settings CRUD
   Future<UserSetting?> getSettings() async {
     final list = await select(userSettings).get();

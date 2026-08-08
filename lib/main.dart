@@ -193,11 +193,18 @@ class AppShell extends ConsumerWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: copperColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: copperColor.withValues(alpha: 0.3), width: 1),
                 ),
-                child: Icon(Icons.timeline_rounded, size: 18, color: copperColor),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: Image.asset(
+                    'assets/app_icon.png',
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               Column(
@@ -306,17 +313,20 @@ class AppShell extends ConsumerWidget {
                     width: 30,
                     height: 30,
                     decoration: BoxDecoration(
-                      color: AppColors.getRoleColor('copper', theme.isDark).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(7),
                       border: Border.all(
                         color: AppColors.getRoleColor('copper', theme.isDark).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
-                    child: Icon(
-                      Icons.timeline_rounded,
-                      size: 16,
-                      color: AppColors.getRoleColor('copper', theme.isDark),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'assets/app_icon.png',
+                        width: 30,
+                        height: 30,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
