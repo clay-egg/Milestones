@@ -130,7 +130,7 @@ class AppShell extends ConsumerWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.bg,
       body: AppBackground(
         child: LayoutBuilder(
           builder: (context, constraints) {

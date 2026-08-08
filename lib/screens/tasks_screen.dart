@@ -127,6 +127,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             return AlertDialog(
               backgroundColor: t.surface,
               elevation: 0,
+              scrollable: true,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
                 side: BorderSide(color: t.border, width: 0.8),
@@ -134,10 +136,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
               contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               title: Text('Edit Task', style: AppFonts.heading(ctx, size: 15)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              content: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   TextField(
                     controller: titleController,
                     autofocus: true,
@@ -251,6 +255,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   ),
                 ],
               ),
+            ),
               actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
@@ -343,7 +348,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.bg,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(

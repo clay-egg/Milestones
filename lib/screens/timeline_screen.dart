@@ -27,7 +27,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     final copperColor = AppColors.getRoleColor('copper', theme.isDark);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.bg,
       body: entriesAsync.when(
         data: (allEntries) {
           // Extract unique months from all logged entries (DESC order)

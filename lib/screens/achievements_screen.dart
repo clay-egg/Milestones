@@ -195,7 +195,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     final activeDaysThisMonth = activeMonthDays.length;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.bg,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(

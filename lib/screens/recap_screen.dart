@@ -173,7 +173,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.bg,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(

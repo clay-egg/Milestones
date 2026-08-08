@@ -370,15 +370,18 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
         ),
       );
     } else {
-      return AnimatedPadding(
-        duration: const Duration(milliseconds: 150),
-        padding: MediaQuery.of(context).viewInsets,
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+      final maxHeight = MediaQuery.of(context).size.height * 0.85;
+
+      return Container(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, 20 + keyboardHeight),
+        child: SafeArea(
+          top: false,
           child: formWidget,
         ),
       );
