@@ -113,6 +113,10 @@ class _RecapModalState extends ConsumerState<RecapModal> {
 
     final periodCompletedTodos = allTodos.where((t) {
       if (!t.isCompleted || t.dateCompleted == null) return false;
+      // Exclude todos whose auto-logged entry is already counted in periodEntries
+      if (t.linkedEntryId != null && periodEntries.any((e) => e.entry.id == t.linkedEntryId)) {
+        return false;
+      }
       return t.dateCompleted!.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
           t.dateCompleted!.isBefore(endDate.add(const Duration(seconds: 1)));
     }).toList();
