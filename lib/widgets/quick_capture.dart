@@ -77,6 +77,7 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
           // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 widget.existingEntry != null ? 'Edit Entry' : 'Log Entry',
@@ -84,20 +85,29 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (widget.existingEntry != null)
+                  if (widget.existingEntry != null) ...[
                     IconButton(
-                      icon: Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.getRoleColor('rose', theme.isDark)),
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(6),
+                      icon: Icon(Icons.delete_outline_rounded, size: 19, color: AppColors.getRoleColor('rose', theme.isDark)),
                       onPressed: () => _confirmDeleteInModal(context, db, widget.existingEntry!),
                     ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    color: theme.textMuted,
-                    onPressed: () {
-                      if (Navigator.canPop(context)) {
-                        Navigator.pop(context);
-                      }
-                    },
+                    const SizedBox(width: 6),
+                  ],
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: copperColor,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => _save(db, context),
+                    child: Text('Save', style: AppFonts.ui(context, size: 13, weight: FontWeight.bold, color: Colors.white)),
                   ),
                 ],
               ),
@@ -191,6 +201,8 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
           TextFormField(
             controller: _descriptionController,
             autofocus: true,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _save(db, context),
             style: AppFonts.ui(context, size: 15),
             maxLines: 2,
             minLines: 1,
@@ -331,26 +343,6 @@ class _QuickCaptureState extends ConsumerState<QuickCapture> {
                 borderSide: BorderSide(color: copperColor, width: 1.5),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 28),
-
-          // Save Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: copperColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-              ),
-              onPressed: () => _save(db, context),
-              child: Text(
-                'Save Entry',
-                style: AppFonts.ui(context, weight: FontWeight.bold, color: Colors.white, size: 15),
-              ),
             ),
           ),
         ],
