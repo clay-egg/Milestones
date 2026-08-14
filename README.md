@@ -25,7 +25,7 @@
 
 | Timeline | Focus Areas | Recap & Insights | Settings |
 |:---:|:---:|:---:|:---:|
-| ![Timeline](screenshots/timeline.png) | ![Focus](screenshots/focus.png) | ![Recap](screenshots/recap.png) | ![Settings](screenshots/settings.png) |
+| ![Timeline](screenshots/timeline1.png) | ![Focus](screenshots/focus.png) | ![Recap](screenshots/recap.png) | ![Settings](screenshots/settings.png) |
 
 ---
 
@@ -38,14 +38,14 @@ Log daily progress entries tagged to your personal focus categories. Browse your
 A simple task checklist linked to your focus areas. Checking off a task auto-creates a matching timeline entry — your completion history builds itself.
 
 ### 🎯 Focus Areas
-Manage everything you're actively working on in one screen:
-- **Projects** — multi-step checklists with milestone achievements
-- **Skills** — track competency growth (0–100%) with evidence notes
-- **Goals** — stage-based progression (customisable stages: e.g. Idea → Research → Prototype → Launch)
-- **Categories** — colour-coded focus areas with optional weekly entry targets
+Organise and track your priorities with customisable focus categories:
+- **Colour Roles** — assign visual themes (Copper, Gold, Plum, Sage, Rose) to distinct areas of your life
+- **Weekly Targets** — set target active days per week (1–7 days)
+- **Live Progress** — visual progress bars tracking active logging days achieved in the current week
+- **Activity Metrics** — see total logs and weekly consistency across each focus area
 
-### 📖 Recap & Insights
-Monthly reflection journal with three sections — *What I achieved*, *Challenges*, and *Plans for next month*. A weekly activity bar chart shows your logging consistency across focus areas.
+### 📊 Recap & Insights
+Weekly and monthly performance breakdowns calculating total logged items, completed tasks, active day consistency percentage, and category distribution charts.
 
 ### 🔔 Daily Reminder
 OS-level local notification scheduled at a time you choose. Reminder persists across app restarts. No server, no push tokens — entirely on-device.
