@@ -21,8 +21,6 @@
 
 ## Screenshots
 
-> _Add your screenshots to a `screenshots/` folder and update the paths below._
-
 | Timeline | Focus Areas | Recap & Insights | Settings |
 |:---:|:---:|:---:|:---:|
 | ![Timeline](screenshots/timeline1.png) | ![Focus](screenshots/focus.png) | ![Recap](screenshots/recap.png) | ![Settings](screenshots/settings.png) |
