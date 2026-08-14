@@ -106,3 +106,7 @@ xcuserdata/
 *.cer
 ios/Pods/
 ios/Podfile.lock
+
+# ─── Project-specific dev artifacts ──────────────────────────────────────────
+# Local design/progress notes — not part of the public source
+progress-archive*.html
