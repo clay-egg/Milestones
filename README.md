@@ -21,9 +21,17 @@
 
 ## Screenshots
 
+### 🌙 Dark Mode (Default)
+
 | Timeline | Focus Areas | Recap & Insights | Settings |
 |:---:|:---:|:---:|:---:|
-| ![Timeline](screenshots/timeline1.png) | ![Focus](screenshots/focus.png) | ![Recap](screenshots/recap.png) | ![Settings](screenshots/settings.png) |
+| ![Timeline Dark](screenshots/timeline1.png) | ![Focus Dark](screenshots/focus.png) | ![Recap Dark](screenshots/recap.png) | ![Settings Dark](screenshots/settings.png) |
+
+### ☀️ Light Mode
+
+| Timeline | Focus Areas | Recap & Insights | Settings |
+|:---:|:---:|:---:|:---:|
+| ![Timeline Light](screenshots/timeline_light.png) | ![Focus Light](screenshots/focus_light.png) | ![Recap Light](screenshots/recap_light.png) | ![Settings Light](screenshots/settings_light.png) |
 
 ---
 
