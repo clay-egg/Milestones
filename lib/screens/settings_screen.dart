@@ -776,11 +776,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     final entries = await db.select(db.entries).get();
                     final todos = await db.getTodos();
                     final categories = await db.select(db.categories).get();
-                    final projects = await db.select(db.projects).get();
-                    final skills = await db.select(db.skills).get();
-                    final goals = await db.select(db.goals).get();
-                    final reflections = await db.select(db.reflections).get();
-                    final milestones = await db.select(db.milestones).get();
 
                     final Map<int, Categorie> categoryMap = {for (var c in categories) c.id: c};
 
@@ -809,31 +804,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         'categoryName': categoryMap[t.categoryId]?.name ?? '',
                         'dateCreated': t.dateCreated.toIso8601String(),
                         'dateCompleted': t.dateCompleted?.toIso8601String(),
-                      }).toList(),
-                      'projects': projects.map((p) => {
-                        'name': p.name,
-                        'stepsJson': p.stepsJson,
-                        'achievementsJson': p.achievementsJson,
-                      }).toList(),
-                      'skills': skills.map((s) => {
-                        'name': s.name,
-                        'progressPercent': s.progressPercent,
-                        'evidenceJson': s.evidenceJson,
-                      }).toList(),
-                      'goals': goals.map((g) => {
-                        'name': g.name,
-                        'currentStage': g.currentStage,
-                        'targetStage': g.targetStage,
-                      }).toList(),
-                      'reflections': reflections.map((r) => {
-                        'monthYear': r.monthYear,
-                        'achieved': r.achieved,
-                        'challenges': r.challenges,
-                        'nextMonth': r.nextMonth,
-                      }).toList(),
-                      'milestones': milestones.map((m) => {
-                        'year': m.year,
-                        'label': m.label,
                       }).toList(),
                     };
 
@@ -907,7 +877,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Text('Clear All Data', style: AppFonts.heading(context, size: 16, color: Colors.redAccent)),
           content: Text(
-            'Are you sure you want to delete all timeline entries, tasks, projects, and focus data? This action cannot be undone.',
+            'Are you sure you want to delete all timeline entries, tasks, and focus categories? This action cannot be undone.',
             style: AppFonts.ui(context, size: 12.5, color: theme.textMuted),
           ),
           actions: [
@@ -924,11 +894,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onPressed: () async {
                 await (db.delete(db.entries)).go();
                 await db.customStatement('DELETE FROM todos;');
-                await (db.delete(db.projects)).go();
-                await (db.delete(db.skills)).go();
-                await (db.delete(db.goals)).go();
-                await (db.delete(db.reflections)).go();
-                await (db.delete(db.milestones)).go();
                 await (db.delete(db.categories)).go();
 
                 // Seed initial default category
@@ -940,11 +905,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ref.refresh(categoriesProvider);
                 ref.refresh(timelineEntriesProvider);
                 ref.refresh(todosProvider);
-                ref.refresh(projectsProvider);
-                ref.refresh(skillsProvider);
-                ref.refresh(goalsProvider);
-                ref.refresh(reflectionsProvider);
-                ref.refresh(milestonesProvider);
 
                 if (context.mounted) {
                   final roseColor = AppColors.getRoleColor('rose', theme.isDark);
@@ -1118,104 +1078,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     }
                   }
 
-                  // 4. Restore Projects
-                  if (data.containsKey('projects')) {
-                    final projectsList = data['projects'] as List<dynamic>;
-                    for (final item in projectsList) {
-                      final map = item as Map<String, dynamic>;
-                      final name = map['name'] as String? ?? '';
-                      final stepsJson = map['stepsJson'] as String? ?? '[]';
-                      final achievementsJson = map['achievementsJson'] as String? ?? '[]';
-                      if (name.isNotEmpty) {
-                        await db.into(db.projects).insert(ProjectsCompanion.insert(
-                          name: name,
-                          stepsJson: stepsJson,
-                          achievementsJson: achievementsJson,
-                        ));
-                      }
-                    }
-                  }
-
-                  // 5. Restore Skills
-                  if (data.containsKey('skills')) {
-                    final skillsList = data['skills'] as List<dynamic>;
-                    for (final item in skillsList) {
-                      final map = item as Map<String, dynamic>;
-                      final name = map['name'] as String? ?? '';
-                      final progressPercent = (map['progressPercent'] as num?)?.toDouble() ?? 0.0;
-                      final evidenceJson = map['evidenceJson'] as String? ?? '[]';
-                      if (name.isNotEmpty) {
-                        await db.into(db.skills).insert(SkillsCompanion.insert(
-                          name: name,
-                          progressPercent: progressPercent,
-                          evidenceJson: evidenceJson,
-                        ));
-                      }
-                    }
-                  }
-
-                  // 6. Restore Goals
-                  if (data.containsKey('goals')) {
-                    final goalsList = data['goals'] as List<dynamic>;
-                    for (final item in goalsList) {
-                      final map = item as Map<String, dynamic>;
-                      final name = map['name'] as String? ?? '';
-                      final currentStage = map['currentStage'] as String? ?? 'Idea';
-                      final targetStage = map['targetStage'] as String? ?? 'Launch';
-                      if (name.isNotEmpty) {
-                        await db.into(db.goals).insert(GoalsCompanion.insert(
-                          name: name,
-                          currentStage: currentStage,
-                          targetStage: targetStage,
-                        ));
-                      }
-                    }
-                  }
-
-                  // 7. Restore Reflections
-                  if (data.containsKey('reflections')) {
-                    final reflectionsList = data['reflections'] as List<dynamic>;
-                    for (final item in reflectionsList) {
-                      final map = item as Map<String, dynamic>;
-                      final monthYear = map['monthYear'] as String? ?? '';
-                      final achieved = map['achieved'] as String? ?? '';
-                      final challenges = map['challenges'] as String? ?? '';
-                      final nextMonth = map['nextMonth'] as String? ?? '';
-                      if (monthYear.isNotEmpty) {
-                        await db.into(db.reflections).insert(ReflectionsCompanion.insert(
-                          monthYear: monthYear,
-                          achieved: achieved,
-                          challenges: challenges,
-                          nextMonth: nextMonth,
-                        ));
-                      }
-                    }
-                  }
-
-                  // 8. Restore Milestones
-                  if (data.containsKey('milestones')) {
-                    final milestonesList = data['milestones'] as List<dynamic>;
-                    for (final item in milestonesList) {
-                      final map = item as Map<String, dynamic>;
-                      final year = (map['year'] as num?)?.toInt() ?? DateTime.now().year;
-                      final label = map['label'] as String? ?? '';
-                      if (label.isNotEmpty) {
-                        await db.into(db.milestones).insert(MilestonesCompanion.insert(
-                          year: year,
-                          label: label,
-                        ));
-                      }
-                    }
-                  }
-
                   ref.refresh(categoriesProvider);
                   ref.refresh(timelineEntriesProvider);
                   ref.refresh(todosProvider);
-                  ref.refresh(projectsProvider);
-                  ref.refresh(skillsProvider);
-                  ref.refresh(goalsProvider);
-                  ref.refresh(reflectionsProvider);
-                  ref.refresh(milestonesProvider);
 
                   if (context.mounted) {
                     Navigator.pop(context);

@@ -45,41 +45,6 @@ final timelineEntriesProvider = StreamProvider<List<EntryWithCategory>>((ref) {
   });
 });
 
-// Projects Provider
-final projectsProvider = StreamProvider<List<Project>>((ref) {
-  final db = ref.watch(databaseProvider);
-  return db.select(db.projects).watch();
-});
-
-// Skills Provider
-final skillsProvider = StreamProvider<List<Skill>>((ref) {
-  final db = ref.watch(databaseProvider);
-  return db.select(db.skills).watch();
-});
-
-// Goals Provider
-final goalsProvider = StreamProvider<List<Goal>>((ref) {
-  final db = ref.watch(databaseProvider);
-  return db.select(db.goals).watch();
-});
-
-// Reflections Provider
-final reflectionsProvider = StreamProvider<List<Reflection>>((ref) {
-  final db = ref.watch(databaseProvider);
-  final query = db.select(db.reflections);
-  query.orderBy([(t) => OrderingTerm.desc(t.monthYear)]);
-  return query.watch();
-});
-
-// Milestones Provider
-final milestonesProvider = StreamProvider<List<Milestone>>((ref) {
-  final db = ref.watch(databaseProvider);
-  final query = db.select(db.milestones);
-  query.orderBy([(t) => OrderingTerm.asc(t.year)]);
-  return query.watch();
-});
-
-
 
 
 // Todos Provider
