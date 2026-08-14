@@ -23,15 +23,37 @@
 
 ### ☀️ Light Mode
 
-| Timeline | Focus Areas | Recap & Insights | Settings |
-|:---:|:---:|:---:|:---:|
-| ![Timeline Dark](screenshots/timeline1.png) | ![Focus Dark](screenshots/focus.png) | ![Recap Dark](screenshots/recap.png) | ![Settings Dark](screenshots/settings.png) |
+<table>
+  <tr>
+    <td width="25%" align="center"><b>Timeline</b></td>
+    <td width="25%" align="center"><b>Focus Areas</b></td>
+    <td width="25%" align="center"><b>Recap & Insights</b></td>
+    <td width="25%" align="center"><b>Settings</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/timeline1.png" alt="Timeline" width="100%" /></td>
+    <td align="center"><img src="screenshots/focus.png" alt="Focus" width="100%" /></td>
+    <td align="center"><img src="screenshots/recap.png" alt="Recap" width="100%" /></td>
+    <td align="center"><img src="screenshots/settings.png" alt="Settings" width="100%" /></td>
+  </tr>
+</table>
 
-### 🌙 Dark Mode 
+### 🌙 Dark Mode
 
-| Timeline | Focus Areas | Recap & Insights | Settings |
-|:---:|:---:|:---:|:---:|
-| ![Timeline Light](screenshots/timeline_dark.png) | ![Focus Light](screenshots/focus_dark.png) | ![Recap Light](screenshots/recap_dark.png) | ![Settings Light](screenshots/settings_dark.png) |
+<table>
+  <tr>
+    <td width="25%" align="center"><b>Timeline</b></td>
+    <td width="25%" align="center"><b>Focus Areas</b></td>
+    <td width="25%" align="center"><b>Recap & Insights</b></td>
+    <td width="25%" align="center"><b>Settings</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/timeline_dark.png" alt="Timeline Dark" width="100%" /></td>
+    <td align="center"><img src="screenshots/focus_dark.png" alt="Focus Dark" width="100%" /></td>
+    <td align="center"><img src="screenshots/recap_dark.png" alt="Recap Dark" width="100%" /></td>
+    <td align="center"><img src="screenshots/settings_dark.png" alt="Settings Dark" width="100%" /></td>
+  </tr>
+</table>
 
 ---
 
