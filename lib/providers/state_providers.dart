@@ -79,13 +79,8 @@ final milestonesProvider = StreamProvider<List<Milestone>>((ref) {
   return query.watch();
 });
 
-// Summaries Provider
-final summariesProvider = StreamProvider<List<Summarie>>((ref) {
-  final db = ref.watch(databaseProvider);
-  final query = db.select(db.summaries);
-  query.orderBy([(t) => OrderingTerm.desc(t.dateCreated)]);
-  return query.watch();
-});
+
+
 
 // Todos Provider
 final todosProvider = FutureProvider<List<TodoItem>>((ref) {

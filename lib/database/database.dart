@@ -79,12 +79,6 @@ class Milestones extends Table {
   TextColumn get label => text()();
 }
 
-class Summaries extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get year => integer()();
-  TextColumn get content => text()();
-  DateTimeColumn get dateCreated => dateTime()();
-}
 
 class UserSettings extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -112,7 +106,6 @@ LazyDatabase _openConnection() {
   Goals,
   Reflections,
   Milestones,
-  Summaries,
   UserSettings
 ])
 class AppDatabase extends _$AppDatabase {
@@ -593,12 +586,4 @@ class AppDatabase extends _$AppDatabase {
     await (delete(milestones)..where((m) => m.id.equals(id))).go();
   }
 
-  // Summaries CRUD
-  Future<void> createSummary(int year, String content) async {
-    await into(summaries).insert(SummariesCompanion.insert(
-      year: year,
-      content: content,
-      dateCreated: DateTime.now(),
-    ));
-  }
 }
