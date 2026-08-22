@@ -33,7 +33,6 @@
 pubspec.lock       # keep only for apps; remove this line if you want lock committed
 
 # Generated files
-lib/generated_plugin_registrant.dart
 coverage/
 
 # ─── Secrets & API Keys (NEVER commit these) ──────────────────────────────────
@@ -81,7 +80,6 @@ macos/Flutter/GeneratedPluginRegistrant.swift
 macos/Flutter/ephemeral/
 
 # ─── Web ──────────────────────────────────────────────────────────────────────
-lib/generated_plugin_registrant.dart
 
 # ─── Obfuscation / Symbolication ──────────────────────────────────────────────
 app.*.symbols

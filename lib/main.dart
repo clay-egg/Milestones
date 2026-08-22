@@ -336,41 +336,7 @@ class AppShell extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.getRoleColor('copper', theme.isDark).withValues(alpha: 0.2),
-                    child: Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                      style: AppFonts.heading(
-                        context,
-                        size: 16,
-                        color: AppColors.getRoleColor('copper', theme.isDark),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userName,
-                          style: AppFonts.heading(context, size: 15),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Personal Growth',
-                          style: AppFonts.mono(context, size: 9.5, color: theme.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
               
               // Navigation Menu Options
               SidebarNavItem(

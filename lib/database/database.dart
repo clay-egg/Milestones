@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'dart:convert';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'connection/connection.dart';
 
 part 'database.g.dart';
 
@@ -55,13 +52,6 @@ class UserSettings extends Table {
   TextColumn get reminderTime => text().withDefault(const Constant('20:00'))();
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbDir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbDir.path, 'milestone.sqlite'));
-    return NativeDatabase(file);
-  });
-}
 
 @DriftDatabase(tables: [
   Categories,
@@ -72,7 +62,7 @@ class AppDatabase extends _$AppDatabase {
   // Lazy singleton — only created on first access, after file system is ready
   static AppDatabase? _instance;
   factory AppDatabase() => _instance ??= AppDatabase._internal();
-  AppDatabase._internal() : super(_openConnection());
+  AppDatabase._internal() : super(openConnection());
 
   @override
   int get schemaVersion => 3;
